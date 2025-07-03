@@ -3623,7 +3623,7 @@ class TestCollisionAvoidanceGoals:
         p = PoseStamped()
         p.header.frame_id = pocky_pose_setup.r_tip
         p.pose.position.x = 0.08
-        q = quaternion_from_axis_angle([1, 0, 0], 0.01)
+        q = quaternion_from_axis_angle([0, 1, 0], np.pi / 2)
         p.pose.orientation = Quaternion(x=q[0], y=q[1], z=q[2], w=q[3])
         pocky_pose_setup.add_cylinder_to_world(name='box',
                                                # size=(0.2, 0.05, 0.05),
