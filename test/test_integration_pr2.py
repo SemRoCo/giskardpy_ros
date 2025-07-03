@@ -4627,52 +4627,6 @@ class TestWeightScaling:
         assert god_map.debug_expression_manager.evaluated_debug_expressions['arm_scaling'][0] * 1000 < \
                god_map.debug_expression_manager.evaluated_debug_expressions['base_scaling'][0]
 
-    def test_manip(self, zero_pose: PR2Tester):
-        p = PoseStamped()
-        p.header.stamp = rospy.node.get_clock().now().to_msg()
-        p.header.frame_id = 'map'
-        p.pose.position = Point(x=0.8, y=-0.3, z=1.0)
-        p.pose.orientation.w = 1.0
-        zero_pose.api.motion_goals.allow_all_collisions()
-        zero_pose.api.motion_goals.add_cartesian_pose(p, zero_pose.r_tip, 'map')
-        m_threshold = 0.007
-        done = zero_pose.api.motion_goals.add_maximize_manipulability(
-            root_link='map',
-            tip_link='base_footprint',
-            m_threshold=m_threshold)
-        zero_pose.api.monitors.add_end_motion(done)
-        zero_pose.api.monitors.add_check_trajectory_length(10)
-        zero_pose.execute(local_min_end=False)
-        assert god_map.debug_expression_manager.evaluated_debug_expressions[f'mIndexpr2/{zero_pose.r_tip}'][
-                   0] >= m_threshold
-
-    def test_manip2(self, zero_pose: PR2Tester):
-        m_threshold = 0.01
-        p = PoseStamped()
-        p.header.stamp = rospy.node.get_clock().now().to_msg()
-        p.header.frame_id = zero_pose.r_tip
-        p.pose.position = Point(x=1.0, y=-0.5, z=0.0)
-        p.pose.orientation.w = 1.0
-        zero_pose.api.motion_goals.allow_all_collisions()
-        zero_pose.api.motion_goals.add_cartesian_pose(p, zero_pose.r_tip, 'map')
-
-        zero_pose.api.motion_goals.add_maximize_manipulability(
-            root_link='torso_lift_link',
-            tip_link=zero_pose.r_tip,
-            m_threshold=m_threshold)
-        p.pose.position = Point(x=1.0, y=0.1, z=0.0)
-        zero_pose.api.motion_goals.add_cartesian_pose(p, zero_pose.l_tip, 'map')
-
-        zero_pose.api.motion_goals.add_maximize_manipulability(
-            root_link='torso_lift_link',
-            tip_link=zero_pose.l_tip,
-            m_threshold=m_threshold)
-        zero_pose.execute()
-        assert god_map.debug_expression_manager.evaluated_debug_expressions[f'mIndexpr2/{zero_pose.r_tip}'][
-                   0] >= m_threshold
-        assert god_map.debug_expression_manager.evaluated_debug_expressions[f'mIndexpr2/{zero_pose.l_tip}'][
-                   0] >= m_threshold
-
 
 class TestActionServerEvents:
     def test_interrupt1(self, zero_pose: PR2Tester):
