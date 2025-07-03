@@ -288,26 +288,26 @@ class ROSMsgVisualization:
 
             if isinstance(expr, cas.RotationMatrix):
                 colors = [
-                    ColorRGBA(1.0, 0.0, 0.0, 1.0),  # Red (X)
-                    ColorRGBA(0.0, 1.0, 0.0, 1.0),  # Green (Y)
-                    ColorRGBA(0.0, 0.0, 1.0, 1.0)  # Blue (Z)
+                    ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0),  # Red (X)
+                    ColorRGBA(r=0.0, g=1.0, b=0.0, a=1.0),  # Green (Y)
+                    ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0)  # Blue (Z)
                 ]
 
                 for i in range(3):
                     m = Marker()
                     m.header.frame_id = self.tf_root
-                    m.header.stamp = rospy.Time.now()
-                    m.pose.orientation.w = 1
+                    m.header.stamp = rospy.node.get_clock().now().to_msg()
+                    m.pose.orientation.w = 1.0
                     m.ns = f'debug/{name}'
                     m.id = i + marker_id_offset
                     m.type = Marker.ARROW
                     m.action = Marker.ADD
                     axis = value[:, i] * 0.5
-                    m.points = [Point(), Point(axis[0], axis[1], axis[2])]  # Start and Endpoints
+                    m.points = [Point(), Point(x=axis[0], y=axis[1], z=axis[2])]  # Start and Endpoints
                     # Arrow properties
-                    m.scale.x = width / 2
+                    m.scale.x = width / 2.
                     m.scale.y = width
-                    m.scale.z = 0
+                    m.scale.z = 0.
 
                     m.color = colors[i]
 
@@ -317,7 +317,7 @@ class ROSMsgVisualization:
                 map_T_d = np.dot(map_T_ref, ref_T_d)
                 map_P_d = map_T_d[:4, 3:]
                 # x
-                d_V_x_offset = np.array([width, 0, 0, 0])
+                d_V_x_offset = np.array([width, 0., 0., 0.])
                 map_V_x_offset = np.dot(map_T_d, d_V_x_offset)
                 mx = Marker()
                 mx.action = Marker.ADD
@@ -338,7 +338,7 @@ class ROSMsgVisualization:
                 mx.scale.z = width * 2.
                 ms.append(mx)
                 # y
-                d_V_y_offset = np.array([0, width, 0, 0])
+                d_V_y_offset = np.array([0., width, 0., 0.])
                 map_V_y_offset = np.dot(map_T_d, d_V_y_offset)
                 my = Marker()
                 my.action = Marker.ADD
@@ -349,7 +349,7 @@ class ROSMsgVisualization:
                 my.pose.position.x = map_P_d[0][0] + map_V_y_offset[0]
                 my.pose.position.y = map_P_d[1][0] + map_V_y_offset[1]
                 my.pose.position.z = map_P_d[2][0] + map_V_y_offset[2]
-                d_R_y = rotation_matrix_from_axis_angle([1, 0, 0], -np.pi / 2)
+                d_R_y = rotation_matrix_from_axis_angle([1., 0, 0], -np.pi / 2)
                 map_R_y = np.dot(map_T_d, d_R_y)
                 q = quaternion_from_rotation_matrix(map_R_y)
                 my.pose.orientation = Quaternion(x=q[0], y=q[1], z=q[2], w=q[3])
