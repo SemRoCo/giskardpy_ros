@@ -5,6 +5,8 @@ from __future__ import annotations
 import signal
 import traceback
 from typing import Set, Tuple, List, Optional, Dict, Union
+
+import rclpy
 from PyQt5.QtGui import QDoubleValidator, QIntValidator
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidget, QCheckBox, QWidget, \
     QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QFileDialog, QMessageBox, QProgressBar, QLabel, QDialog, \
@@ -14,6 +16,8 @@ import pandas as pd
 import sys
 import os
 
+from giskardpy_ros.ros2 import rospy
+from giskardpy_ros.ros2.rospy import ROS2Wrapper
 from std_msgs.msg import ColorRGBA
 
 from giskardpy.data_types.data_types import PrefixName
@@ -30,9 +34,8 @@ from giskardpy.model.better_pybullet_syncer import BetterPyBulletSyncer
 from giskardpy.model.collision_world_syncer import DisableCollisionReason
 from giskardpy.model.utils import robot_name_from_urdf_string
 from giskardpy.model.world import WorldTree
-from giskardpy_ros.ros1.interface import ROS1Wrapper
-from giskardpy_ros.ros1.ros_msg_visualization import ROSMsgVisualization
-from giskardpy_ros.ros1.visualization_mode import VisualizationMode
+from giskardpy_ros.ros2.ros_msg_visualization import ROSMsgVisualization
+from giskardpy_ros.ros2.visualization_mode import VisualizationMode
 from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard
 
 reason_color_map = {
@@ -91,7 +94,7 @@ class Table(QTableWidget):
         super().__init__()
         self.cellClicked.connect(self.table_item_callback)
         self._disabled_links = set()
-        self.ros_visualizer = ROSMsgVisualization('collision_matrix_tool', mode=VisualizationMode.CollisionsDecomposed)
+        self.ros_visualizer = ROSMsgVisualization(mode=VisualizationMode.CollisionsDecomposed)
 
     def update_disabled_links(self, link_names: Set[PrefixName]):
         self._disabled_links = link_names
@@ -163,7 +166,7 @@ class Table(QTableWidget):
         key = self.sort_links(link1, link2)
         reason = self.reasons.get(key, None)
         color = reason_color_map[reason]
-        color_msg = ColorRGBA(color[0] / 255, color[1] / 255, color[2] / 255, 1)
+        color_msg = ColorRGBA(r=color[0] / 255., g=color[1] / 255., b=color[2] / 255., a=1.0)
         god_map.world.links[link1].dye_collisions(color_msg)
         god_map.world.links[link2].dye_collisions(color_msg)
         god_map.world.reset_cache()
@@ -347,35 +350,35 @@ class ComputeSelfCollisionMatrixParameterDialog(QDialog):
         return params
 
 
-class RosparamSelectionDialog(QDialog):
-    default_option = '/robot_description'
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-        self.setWindowTitle("File Selection")
-
-        self.layout = QVBoxLayout(self)
-
-        self.label = QLabel("Please select an option:")
-        self.layout.addWidget(self.label)
-
-        self.combo_box = QComboBox(self)
-        self.combo_box.setEditable(True)  # Make the combo box editable
-        self.layout.addWidget(self.combo_box)
-
-        # Add the options to the combobox
-        self.combo_box.addItems(rospy.get_param_names())
-        if rospy.has_param(self.default_option):
-            self.combo_box.setCurrentText(self.default_option)
-
-        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-        self.layout.addWidget(self.buttonBox)
-
-    def get_selected_option(self):
-        return self.combo_box.currentText()
+# class RosparamSelectionDialog(QDialog):
+#     default_option = '/robot_description'
+#
+#     def __init__(self, parent=None):
+#         super().__init__(parent)
+#
+#         self.setWindowTitle("File Selection")
+#
+#         self.layout = QVBoxLayout(self)
+#
+#         self.label = QLabel("Please select an option:")
+#         self.layout.addWidget(self.label)
+#
+#         self.combo_box = QComboBox(self)
+#         self.combo_box.setEditable(True)  # Make the combo box editable
+#         self.layout.addWidget(self.combo_box)
+#
+#         # Add the options to the combobox
+#         self.combo_box.addItems(rospy.get_param_names())
+#         if rospy.has_param(self.default_option):
+#             self.combo_box.setCurrentText(self.default_option)
+#
+#         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
+#         self.buttonBox.accepted.connect(self.accept)
+#         self.buttonBox.rejected.connect(self.reject)
+#         self.layout.addWidget(self.buttonBox)
+#
+#     def get_selected_option(self):
+#         return self.combo_box.currentText()
 
 
 class ClickableLabel(QLabel):
@@ -470,7 +473,7 @@ class Application(QMainWindow):
         self.initUI()
 
     def die(self):
-        if rospy.is_shutdown():
+        if not rclpy.ok():
             QApplication.quit()
 
     def initUI(self):
@@ -518,13 +521,13 @@ class Application(QMainWindow):
     def _urdf_box_layout(self) -> QHBoxLayout:
         self.load_urdf_file_button = QPushButton('Load urdf from file')
         self.load_urdf_file_button.clicked.connect(self.load_urdf_from_path)
-        self.load_urdf_param_button = QPushButton('Load urdf from parameter server')
-        self.load_urdf_param_button.clicked.connect(self.load_urdf_from_paramserver)
+        # self.load_urdf_param_button = QPushButton('Load urdf from parameter server')
+        # self.load_urdf_param_button.clicked.connect(self.load_urdf_from_paramserver)
         self.urdf_progress = MyProgressBar(self)
         self.urdf_progress.set_progress(0, 'No urdf loaded')
         urdf_section = QHBoxLayout()
         urdf_section.addWidget(self.load_urdf_file_button)
-        urdf_section.addWidget(self.load_urdf_param_button)
+        # urdf_section.addWidget(self.load_urdf_param_button)
         urdf_section.addWidget(self.urdf_progress)
         return urdf_section
 
@@ -570,15 +573,15 @@ class Application(QMainWindow):
         dialog.exec_()
         self.table.update_table()
 
-    def load_urdf_from_paramserver(self):
-        dialog = RosparamSelectionDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
-            robot_description = dialog.get_selected_option()
-            if rospy.has_param(robot_description):
-                urdf = rospy.get_param(robot_description)
-                self.load_urdf(urdf, robot_description)
-            else:
-                QMessageBox.critical(self, 'Error', f'Parameter not found: \n{robot_description}')
+    # def load_urdf_from_paramserver(self):
+    #     dialog = RosparamSelectionDialog(self)
+    #     if dialog.exec_() == QDialog.Accepted:
+    #         robot_description = dialog.get_selected_option()
+    #         if rospy.has_param(robot_description):
+    #             urdf = rospy.get_param(robot_description)
+    #             self.load_urdf(urdf, robot_description)
+    #         else:
+    #             QMessageBox.critical(self, 'Error', f'Parameter not found: \n{robot_description}')
 
     def load_urdf(self, urdf: str, progress_str: str):
         god_map.world.clear()
@@ -695,7 +698,7 @@ def handle_sigint(sig, frame):
 
 if __name__ == '__main__':
     rospy.init_node('self_collision_matrix_updater')
-    set_middleware(ROS1Wrapper())
+    set_middleware(ROS2Wrapper())
     signal.signal(signal.SIGINT, handle_sigint)
 
     app = QApplication(sys.argv)

@@ -1,7 +1,7 @@
 name: Publish Dockerfiles
-defaults:
-  run:
-    shell: bash -ieo pipefail {0}
+#defaults:
+#  run:
+#    shell: bash -eo pipefail {0}
 on:
   workflow_dispatch:
     inputs:
@@ -83,7 +83,7 @@ jobs:
             fi
           done
           
-          if [[ "$BPB_CHANGED" == "true" || "$BPB_CHANGED" == "true" ]]; then
+          if [[ "$QPSWIFT_CHANGED" == "true" || "$BPB_CHANGED" == "true" ]]; then
             echo "NEEDS_REBUILD=true" >> $GITHUB_OUTPUT
             echo "Rebuild needed due to changes in dependencies"
           else
