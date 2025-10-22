@@ -275,6 +275,7 @@ class StandAloneBTConfig(BehaviorTreeConfig):
         if self.publish_robot_description:
             self.add_robot_description_publisher()
         self.add_evaluate_debug_expressions()
+        self._add_debug_trajectory_plotter()
         if self.publish_js:
             self.add_js_publisher(include_prefix=self.include_prefix)
         if self.publish_free_variables:

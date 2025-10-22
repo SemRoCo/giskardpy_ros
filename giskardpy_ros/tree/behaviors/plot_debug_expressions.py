@@ -50,7 +50,7 @@ class PlotDebugExpressions(PlotTrajectory):
 
     def plot(self):
         trajectory = god_map.debug_expression_manager.raw_traj_to_traj(
-            god_map.qp_controller.config.control_dt
+            god_map.qp_controller.config.control_dt or god_map.qp_controller.config.mpc_dt
         )
         if trajectory and len(trajectory) > 0:
             sample_period = god_map.qp_controller.config.mpc_dt
@@ -66,3 +66,7 @@ class PlotDebugExpressions(PlotTrajectory):
             except Exception:
                 traceback.print_exc()
                 get_middleware().logwarn("failed to save debug.pdf")
+            finally:
+                # Cancel timer so it only runs once
+                self.plot_thread.cancel()
+                self.plot_done = True

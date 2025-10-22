@@ -3,16 +3,19 @@ from threading import Thread
 
 from line_profiler import profile
 from py_trees.common import Status
+from rclpy.executors import MultiThreadedExecutor
 
 from giskardpy.god_map import god_map
 from giskardpy.middleware import get_middleware
+from giskardpy_ros.ros2 import rospy
 from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
 from giskardpy.utils.decorators import record_time
 from line_profiler import profile
 
 
 class PlotTrajectory(GiskardBehavior):
-    plot_thread: Thread
+    plot_thread = None
+    plot_done = False
 
 
     def __init__(self, name, wait=False, joint_filter=None, normalize_position: bool = False, **kwargs):
@@ -24,8 +27,9 @@ class PlotTrajectory(GiskardBehavior):
 
 
     def initialise(self):
-        self.plot_thread = Thread(target=self.plot, name=self.name)
-        self.plot_thread.start()
+        # self.plot_thread = Thread(target=self.plot, name=self.name)
+        # self.plot_thread.start()
+        self.plot_thread = rospy.node.create_timer(0.0, self.plot)
 
     def plot(self):
         trajectory = god_map.trajectory
@@ -44,6 +48,6 @@ class PlotTrajectory(GiskardBehavior):
     @record_time
     
     def update(self):
-        if self.wait and self.plot_thread.is_alive():
+        if self.wait and not self.plot_done:
             return Status.RUNNING
         return Status.SUCCESS
