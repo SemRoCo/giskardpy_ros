@@ -1,6 +1,7 @@
 from line_profiler import profile
 from py_trees.common import Status
 
+from typing import TYPE_CHECKING
 from giskardpy.god_map import god_map
 from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
 from giskardpy.utils.decorators import record_time
@@ -29,6 +30,8 @@ class RealKinSimPlugin(GiskardBehavior):
         # if dt > god_map.qp_controller.config.mpc_dt:
         #     dt = god_map.qp_controller.config.mpc_dt
         dt = god_map.qp_controller.config.control_dt
-        god_map.world.update_state(next_cmds, dt, max_derivative=god_map.qp_controller.max_derivative)
+        # god_map.world.update_state(next_cmds, dt, max_derivative=god_map.qp_controller.max_derivative)
+        god_map.world.apply_control_commands(next_cmds, dt,
+                                             derivative=god_map.qp_controller.config.max_derivative)
         self.last_time = next_time
         return Status.RUNNING

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 
 import rclpy
 from line_profiler import profile
@@ -13,7 +13,9 @@ from giskardpy_ros.ros2 import rospy
 from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
 from giskardpy_ros.tree.blackboard_utils import catch_and_raise_to_blackboard
 from line_profiler import profile
-
+if TYPE_CHECKING:
+    from semantic_digital_twin.world_description.degree_of_freedom import DegreeOfFreedom
+    from semantic_digital_twin.world import World
 
 class JointGroupVelController(GiskardBehavior):
 
@@ -27,7 +29,7 @@ class JointGroupVelController(GiskardBehavior):
 
         # self.joint_names = self.get_joints()
         self.joint_names = joints
-        god_map.world.register_controlled_joints(self.joint_names)
+        # god_map.world.register_controlled_joints(self.joint_names)
         self.msg = None
         get_middleware().loginfo(
             f"Created publisher for {self.cmd_topic} for {self.joint_names}"

@@ -95,8 +95,11 @@ class GiskardBT(BehaviourTree):
 
     @toggle_off("projection_mode")
     def switch_to_execution(self):
-        GiskardBlackboard().tree_config.switch_to_execution_mode()
-        self.cleanup_control_loop.remove_reset_world_state()
+        if GiskardBlackboard().tree_config.is_open_loop():
+            self.root.insert_child(self.execute_traj_failure_is_success, -2)
+        elif GiskardBlackboard().tree_config.is_closed_loop():
+            self.control_loop_branch.switch_to_closed_loop()
+        self.cleanup_control_loop.add_reset_world_state()
 
     def live(self):
         get_middleware().loginfo("giskard is ready")

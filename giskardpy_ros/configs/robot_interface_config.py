@@ -89,13 +89,13 @@ class RobotInterfaceConfig(ABC):
         Tell Giskard to sync the world state with a joint state topic
         """
         if group_name is None:
-            group_name = self.world.robot_name
+            group_name = self.world.get_semantic_annotations_by_type(AbstractRobot)[0].name.prefix
         self.tree.wait_for_goal.synchronization.sync_joint_state_topic(
             group_name=group_name, topic_name=topic_name
         )
         if (
             GiskardBlackboard().tree_config.is_closed_loop()
-            and group_name == self.world.robot_name
+            and group_name == self.world.get_semantic_annotations_by_type(AbstractRobot)[0].name.prefix
         ):
             self.tree.control_loop_branch.closed_loop_synchronization.sync_joint_state2_topic(
                 group_name=group_name, topic_name=topic_name
@@ -246,7 +246,7 @@ class RobotInterfaceConfig(ABC):
         """
         internal_joint_names: List[PrefixedName] = []
         for i in range(len(joints)):
-            internal_joint_names.append(god_map.world.search_for_joint_name(joints[i]))
+            internal_joint_names.append(god_map.world.get_connection_by_name(joints[i]).name)
         self.tree.control_loop_branch.send_controls.add_joint_velocity_group_controllers(
             cmd_topic=cmd_topic, joints=internal_joint_names
         )

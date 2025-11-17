@@ -13,11 +13,11 @@ from giskardpy_ros.utils.utils import load_xacro
 
 def main():
     rospy.init_node("giskard")
-    rospy.node.declare_parameters(
-        namespace="", parameters=[("robot_description", Parameter.Type.STRING)]
-    )
-    robot_description = rospy.node.get_parameter_or("robot_description").value
-    # robot_description = load_xacro("package://iai_tracy_description/urdf/tracy.urdf.xacro")
+    # rospy.node.declare_parameters(
+    #     namespace="", parameters=[("robot_description", Parameter.Type.STRING)]
+    # )
+    # robot_description = rospy.node.get_parameter_or("robot_description").value
+    robot_description = load_xacro("package://iai_tracy_description/urdf/tracy.urdf.xacro")
 
     giskard = Giskard(
         world_config=WorldWithTracyConfig(urdf=robot_description),

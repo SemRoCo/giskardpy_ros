@@ -102,9 +102,10 @@ class ControlLoop(AsyncBehavior):
         self.remove_child(self.kin_sim)
 
     def remove_projection_behaviors(self):
-        self.remove_child(self.projection_synchronization_sir)
-        self.remove_child(self.time)
-        self.remove_child(self.kin_sim)
+        pass
+        #self.remove_child(self.projection_synchronization_sir)
+        #self.remove_child(self.time)
+        #self.remove_child(self.kin_sim)
         # self.publish_state.remove_visualization_marker_behavior()
 
     def remove_closed_loop_behaviors(self):

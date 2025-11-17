@@ -89,6 +89,6 @@ class SyncJointStatePosition(GiskardBehavior):
     def update(self):
         for joint_name, position in zip(self.msg.name, self.msg.position):
             joint_name = PrefixedName(joint_name, self.group_name)
-            god_map.world.state[joint_name][Derivativesw.position] = position
+            god_map.world.state[joint_name][Derivatives.position] = position
 
         return Status.SUCCESS

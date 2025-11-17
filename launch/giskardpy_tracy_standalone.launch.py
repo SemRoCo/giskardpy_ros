@@ -31,13 +31,13 @@ def generate_launch_description():
             output='screen',
             arguments=['0', '0', '0', '0', '0', '0', 'map', 'world']
         ),
-        Node(
-            package='giskardpy_ros',
-            executable='tracy_standalone',
-            name='giskard',
-            parameters=[{'robot_description': robot_description}],
-            output='screen',
-        ),
+        # Node(
+        #     package='giskardpy_ros',
+        #     executable='tracy_standalone',
+        #     name='giskard',
+        #     parameters=[{'robot_description': robot_description}],
+        #     output='screen',
+        # ),
         Node(
             package='giskardpy_ros',
             executable='interactive_marker',

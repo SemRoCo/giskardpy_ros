@@ -1,3 +1,4 @@
+from giskardpy.model.collision_world_syncer import CollisionCheckerLib
 from giskardpy_ros.ros2 import rospy
 from rclpy import Parameter
 from rclpy.exceptions import ParameterUninitializedException
@@ -5,8 +6,10 @@ from rclpy.exceptions import ParameterUninitializedException
 from giskardpy.qp.qp_controller_config import QPControllerConfig
 from giskardpy_ros.configs.behavior_tree_config import ClosedLoopBTConfig
 from giskardpy_ros.configs.giskard import Giskard
-from giskardpy_ros.configs.iai_robots.tracy import TracyVelocityInterface, TracyWorldConfig
+from giskardpy_ros.configs.iai_robots.tracy import TracyVelocityInterface, WorldWithTracyConfig
 from giskardpy_ros.ros2.visualization_mode import VisualizationMode
+from giskardpy_ros.utils.utils import load_xacro
+
 
 # left_wrist_3_joint -1.54  -2.28
 
@@ -22,9 +25,9 @@ def main():
         robot_description = rospy.node.get_parameter_or('robot_description').value
     except ParameterUninitializedException as e:
         robot_description = None
-    giskard = Giskard(world_config=TracyWorldConfig(robot_description=robot_description),
-                      collision_avoidance_config=LoadSelfCollisionMatrixConfig(
-                          '/home/tracy/workspace/ros/src/giskardpy_ros/self_collision_matrices/iai/tracy.srdf'),
+    # robot_description = load_xacro("package://iai_tracy_description/urdf/tracy.urdf.xacro")
+    giskard = Giskard(world_config=WorldWithTracyConfig(urdf=robot_description),
+                      collision_checker_id=CollisionCheckerLib.none,
                       robot_interface_config=TracyVelocityInterface(),
                       behavior_tree_config=ClosedLoopBTConfig(visualization_mode=VisualizationMode.VisualsFrameLocked),
                       qp_controller_config=QPControllerConfig(mpc_dt=0.0125,

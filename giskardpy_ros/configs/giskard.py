@@ -147,12 +147,12 @@ class Giskard:
         movable_joints = world.get_connections_by_type(ActiveConnection)
         controlled_joints = self.robot.controlled_connections
         non_controlled_joints = set(movable_joints).difference(set(controlled_joints))
-        if len(controlled_joints) == 0 and len(world.connections) > 0:
-            raise SetupException("No joints are flagged as controlled.")
+        # if len(controlled_joints) == 0 and len(world.connections) > 0:
+        #     raise SetupException("No joints are flagged as controlled.")
         if len(non_controlled_joints) > 0:
             get_middleware().loginfo(
                 f"The following joints are non-fixed according to the urdf, "
-                f"but not flagged as controlled: {[c.name for c in non_controlled_joints]}."
+                f"but not flagged as controlled: {[c.name.name for c in non_controlled_joints]}."
             )
 
     def add_goal_package_name(self, package_name: str):
