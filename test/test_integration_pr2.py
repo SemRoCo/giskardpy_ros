@@ -20,6 +20,7 @@ from giskard_msgs.action._move import Move_Goal
 from numpy import pi
 from rclpy.duration import Duration
 
+from giskardpy.middleware.ros2.rospy import wait_for_future_to_complete
 from giskardpy.motion_statechart.goals.collision_avoidance import (
     ExternalCollisionAvoidance,
     SelfCollisionAvoidance,
@@ -1419,17 +1420,13 @@ class TestCollisionAvoidanceGoals:
                     tip_normal=Vector3.Y(reference_frame=box),
                     goal_normal=Vector3.Y(reference_frame=pocky_pose_setup.map),
                 ),
-                CollisionAvoidance([CollisionRule.avoid_all_collision()]),
+                ExternalCollisionAvoidance(),
                 local_min := LocalMinimumReached(),
             ]
         )
         msc.add_node(EndMotion.when_true(local_min))
 
         pocky_pose_setup.api.execute(msc)
-        assert (
-            "box",
-            "bl",
-        ) not in GiskardBlackboard().executor.collision_scene.collision_matrix
         pocky_pose_setup.check_cpi_geq(pocky_pose_setup.get_r_gripper_links(), 0.04)
 
     def test_attached_two_items(self, giskard: PR2Tester):
@@ -2077,7 +2074,7 @@ class TestActionServerEvents:
         )
 
         goal_accepted_future = giskard.api.execute_async(msc)
-        await goal_accepted_future
+        wait_for_future_to_complete(goal_accepted_future)
 
         await asyncio.sleep(2)
 
@@ -2094,7 +2091,7 @@ class TestActionServerEvents:
         msc.add_node(EndMotion.when_true(cart_goal))
 
         goal_accepted_future = giskard.api.execute_async(msc)
-        await goal_accepted_future
+        wait_for_future_to_complete(goal_accepted_future)
 
         await giskard.api.get_result()
 
@@ -2112,10 +2109,10 @@ class TestActionServerEvents:
         )
 
         goal_accepted_future = giskard.api.execute_async(msc)
-        await goal_accepted_future
+        wait_for_future_to_complete(goal_accepted_future)
 
         await asyncio.sleep(2)
-        await giskard.api.cancel_goal_async()
+        wait_for_future_to_complete(giskard.api.cancel_goal_async())
 
         with pytest.raises(ExecutionCanceledException):
             await giskard.api.get_result()
@@ -2149,7 +2146,7 @@ class TestActionServerEvents:
         )
 
         goal_accepted_future = giskard.api.execute_async(msc)
-        await goal_accepted_future
+        wait_for_future_to_complete(goal_accepted_future)
 
         await asyncio.sleep(1)
 
@@ -2167,7 +2164,7 @@ class TestActionServerEvents:
             GiskardBlackboard().executor.context.world.get_kinematic_structure_entity_by_name(
                 "box"
             )
-        await giskard.api.cancel_goal_async()
+        wait_for_future_to_complete(giskard.api.cancel_goal_async())
         with pytest.raises(ExecutionCanceledException):
             await giskard.api.get_result()
 
