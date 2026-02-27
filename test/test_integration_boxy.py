@@ -6,7 +6,6 @@ from geometry_msgs.msg import PoseStamped, Quaternion, Vector3Stamped, PointStam
 
 from giskard_msgs.msg import LinkName
 
-from giskardpy.model.collision_world_syncer import CollisionCheckerLib
 from giskardpy_ros.configs.behavior_tree_config import StandAloneBTConfig
 from giskardpy_ros.configs.iai_robots.boxy import BoxyStandaloneInterfaceConfig
 from giskardpy_ros.configs.iai_robots.donbot import WorldWithBoxyBaseConfig

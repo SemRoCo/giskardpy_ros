@@ -12,9 +12,10 @@ class CleanUp(GiskardBehavior):
 
     @record_time
     def initialise(self):
-        GiskardBlackboard().executor.world.compiled_all_fks = None
-        GiskardBlackboard().executor.collision_scene.reset_cache()
-
+        if hasattr(GiskardBlackboard().executor, "motion_statechart"):
+            GiskardBlackboard().motion_statechart.cleanup_nodes(
+                context=GiskardBlackboard().executor.context
+            )
         self.get_blackboard().runtime = None
 
     def update(self):

@@ -3,7 +3,7 @@ from typing import Dict
 import numpy as np
 import pytest
 
-from giskardpy.middleware import get_middleware
+from giskardpy.middleware.ros2 import rospy
 from giskardpy.motion_statechart.graph_node import EndMotion
 from giskardpy.motion_statechart.monitors.overwrite_state_monitors import (
     SetSeedConfiguration,
@@ -11,7 +11,6 @@ from giskardpy.motion_statechart.monitors.overwrite_state_monitors import (
 )
 from giskardpy.motion_statechart.motion_statechart import MotionStatechart
 from giskardpy.motion_statechart.tasks.joint_tasks import JointState
-from giskardpy_ros.ros2 import rospy
 from giskardpy_ros.utils.utils import load_xacro
 from giskardpy_ros.utils.utils_for_tests import GiskardTester
 from krrood.symbolic_math.symbolic_math import trinary_logic_and
@@ -23,7 +22,7 @@ from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix
 def init_rospy():
 
     rospy.init_node("giskard")
-    get_middleware().loginfo("init ros")
+    rospy.node.get_logger().info("init ros")
 
     try:
         yield None
@@ -43,8 +42,8 @@ def giskard_factory(init_rospy, robot: GiskardTester):
         msc = MotionStatechart()
 
         initial_config = SetSeedConfiguration(
-            name=PrefixedName("initial configuration"),
-            seed_configuration=JointState(parse_seed_joint_state),
+            name="initial configuration",
+            seed_configuration=JointState.from_mapping(parse_seed_joint_state),
         )
         msc.add_node(initial_config)
 
@@ -52,9 +51,7 @@ def giskard_factory(init_rospy, robot: GiskardTester):
             base_goal = HomogeneousTransformationMatrix(
                 reference_frame=robot.api.world.root
             )
-            base_pose_reached = SetOdometry(
-                name=PrefixedName("initial pose"), base_pose=base_goal
-            )
+            base_pose_reached = SetOdometry(name="initial pose", base_pose=base_goal)
             msc.add_node(base_pose_reached)
             done = trinary_logic_and(
                 initial_config.observation_variable,
@@ -62,7 +59,7 @@ def giskard_factory(init_rospy, robot: GiskardTester):
             )
         else:
             done = initial_config.observation_variable
-        end = EndMotion(name=PrefixedName("end"))
+        end = EndMotion(name="end")
         msc.add_node(end)
         end.start_condition = done
         robot.api.execute(msc)

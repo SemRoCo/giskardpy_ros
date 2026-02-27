@@ -13,10 +13,9 @@ from py_trees.common import Status
 from py_trees.composites import Composite
 from py_trees.decorators import RunningIsSuccess, SuccessIsRunning
 
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
 from giskardpy_ros.tree.blackboard_utils import raise_to_blackboard
-from giskardpy.middleware import get_middleware
 
 
 class AsyncBehavior(GiskardBehavior, Composite):
@@ -68,7 +67,7 @@ class AsyncBehavior(GiskardBehavior, Composite):
 
     def terminate(self, new_status: Status) -> None:
         try:
-            get_middleware().loginfo(f"avg dt was {self.sleeper.avg_dt}")
+            rospy.node.get_logger().info(f"avg dt was {self.sleeper.avg_dt}")
         except Exception as e:
             pass  # sometimes the sleeper is not defined yet
         self.set_status(Status.FAILURE)

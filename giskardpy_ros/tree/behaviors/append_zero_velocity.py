@@ -18,10 +18,12 @@ class SetZeroVelocity(GiskardBehavior):
         for (
             free_variable,
             state,
-        ) in GiskardBlackboard().executor.world.state.items():
+        ) in GiskardBlackboard().executor.context.world.state.items():
             for derivative in Derivatives.range(Derivatives.velocity, Derivatives.jerk):
                 if derivative == Derivatives.position:
                     continue
-                GiskardBlackboard().executor.world.state[free_variable][derivative] = 0
-        GiskardBlackboard().executor.world.notify_state_change()
+                GiskardBlackboard().executor.context.world.state[free_variable][
+                    derivative
+                ] = 0
+        GiskardBlackboard().executor.context.world.notify_state_change()
         return Status.SUCCESS

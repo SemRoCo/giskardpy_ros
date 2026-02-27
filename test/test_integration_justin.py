@@ -126,7 +126,7 @@ class JustinTestWrapper(GiskardTester):
         # self.r_gripper = rospy.ServiceProxy('r_gripper_simulator/set_joint_states', SetJointState)
         # self.l_gripper = rospy.ServiceProxy('l_gripper_simulator/set_joint_states', SetJointState)
         self.odom_root = "odom"
-        self.robot = GiskardBlackboard().executor.world.groups[self.robot_name]
+        self.robot = GiskardBlackboard().executor.context.world.groups[self.robot_name]
 
     def reset(self):
         pass

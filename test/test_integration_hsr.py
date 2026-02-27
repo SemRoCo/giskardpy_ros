@@ -8,9 +8,7 @@ from geometry_msgs.msg import PoseStamped, PointStamped, Vector3Stamped, Point
 from numpy import pi
 
 from conftest import kitchen_setup
-from giskardpy.model.collision_matrix_manager import CollisionRequest
-from giskardpy.model.collision_world_syncer import CollisionCheckerLib
-from giskardpy.motion_statechart.goals.collision_avoidance import CollisionAvoidance
+from giskardpy.motion_statechart.goals.collision_avoidance import SelfCollisionAvoidance
 from giskardpy.motion_statechart.goals.open_close import Open, Close
 from giskardpy.motion_statechart.goals.templates import Sequence
 from giskardpy.motion_statechart.goals.test import GraspSequence, Cutting
@@ -21,7 +19,6 @@ from giskardpy.motion_statechart.monitors.overwrite_state_monitors import (
 )
 from giskardpy.motion_statechart.monitors.payload_monitors import (
     Pulse,
-    CountControlCycles,
     CheckControlCycleCount,
 )
 from giskardpy.motion_statechart.motion_statechart import MotionStatechart
@@ -95,7 +92,6 @@ class HSRTester(GiskardTester):
         return Giskard(
             world_config=WorldWithHSRConfig(urdf=robot_desc),
             robot_interface_config=HSRStandaloneInterface(),
-            collision_checker_id=CollisionCheckerLib.bpb,
             behavior_tree_config=StandAloneBTConfig(
                 debug_mode=True,
                 add_debug_marker_publisher=True,
@@ -107,8 +103,10 @@ class HSRTester(GiskardTester):
 
     @property
     def robot(self) -> HSRB:
-        return GiskardBlackboard().executor.world.get_semantic_annotation_by_name(
-            self.api.robot_name
+        return (
+            GiskardBlackboard().executor.context.world.get_semantic_annotation_by_name(
+                self.api.robot_name
+            )
         )
 
     def open_gripper(self):
@@ -659,9 +657,7 @@ class TestCollisionAvoidanceGoals:
                         reference_frame=giskard.tip,
                     ),
                 ),
-                CollisionAvoidance(
-                    collision_entries=[CollisionRequest.avoid_all_collision()]
-                ),
+                SelfCollisionAvoidance(),
             ]
         )
         msc.add_node(EndMotion.when_true(cart_goal))
@@ -699,9 +695,7 @@ class TestCollisionAvoidanceGoals:
                         ),
                     ]
                 ),
-                CollisionAvoidance(
-                    collision_entries=[CollisionRequest.avoid_all_collision()]
-                ),
+                SelfCollisionAvoidance(),
             ]
         )
         msc.add_node(EndMotion.when_true(sequence))
@@ -787,7 +781,7 @@ class TestCollisionAvoidanceGoals:
                         {"arm_flex_joint": -np.pi / 2}, world=giskard.api.world
                     )
                 ),
-                CollisionAvoidance([CollisionRequest.avoid_all_collision()]),
+                CollisionAvoidance([CollisionRule.avoid_all_collision()]),
             ]
         )
         msc.add_node(EndMotion.when_true(msc.nodes[0]))
@@ -809,7 +803,7 @@ class TestCollisionAvoidanceGoals:
                         {"arm_flex_joint": 0}, world=giskard.api.world
                     )
                 ),
-                CollisionAvoidance([CollisionRequest.avoid_all_collision()]),
+                CollisionAvoidance([CollisionRule.avoid_all_collision()]),
             ]
         )
         msc.add_node(EndMotion.when_true(msc.nodes[0]))

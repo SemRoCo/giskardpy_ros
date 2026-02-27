@@ -2,8 +2,7 @@ import numpy as np
 from geometry_msgs.msg import Twist
 from py_trees.common import Status
 
-from giskardpy.middleware import get_middleware
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
 from giskardpy_ros.tree.blackboard_utils import (
     catch_and_raise_to_blackboard,
@@ -24,7 +23,7 @@ class SendCmdVelTwist(GiskardBehavior):
 
         self.joint = joint
         self.joint.has_hardware_interface = True
-        get_middleware().loginfo(f"Created publisher for {self.cmd_topic}.")
+        rospy.node.get_logger().info(f"Created publisher for {self.cmd_topic}.")
 
     def solver_cmd_to_twist(self, twist) -> Twist:
         try:
@@ -47,12 +46,18 @@ class SendCmdVelTwist(GiskardBehavior):
     @catch_and_raise_to_blackboard
     def update(self):
         x_vel = (
-            GiskardBlackboard().executor.world.state[self.joint.x_velocity.id].velocity
+            GiskardBlackboard()
+            .executor.context.world.state[self.joint.x_velocity.id]
+            .velocity
         )
         y_vel = (
-            GiskardBlackboard().executor.world.state[self.joint.y_velocity.id].velocity
+            GiskardBlackboard()
+            .executor.context.world.state[self.joint.y_velocity.id]
+            .velocity
         )
-        yaw_vel = GiskardBlackboard().executor.world.state[self.joint.yaw.id].velocity
+        yaw_vel = (
+            GiskardBlackboard().executor.context.world.state[self.joint.yaw.id].velocity
+        )
         cmd = Twist()
         cmd.linear.x = x_vel
         cmd.linear.y = y_vel

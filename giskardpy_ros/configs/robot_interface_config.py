@@ -11,7 +11,7 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
 
 from giskardpy.data_types.exceptions import SetupException
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.ros2.ros2_interface import (
     search_for_subscriber_of_node_with_type,
     get_parameters,
@@ -42,7 +42,7 @@ class RobotInterfaceConfig(ABC):
 
     @property
     def world(self) -> World:
-        return GiskardBlackboard().executor.world
+        return GiskardBlackboard().executor.context.world
 
     @property
     def robot(self) -> AbstractRobot:
@@ -251,7 +251,7 @@ class RobotInterfaceConfig(ABC):
         controlled_connections: List[Connection] = []
         for i in range(len(connections)):
             controlled_connections.append(
-                GiskardBlackboard().executor.world.get_connection_by_name(
+                GiskardBlackboard().executor.context.world.get_connection_by_name(
                     connections[i]
                 )
             )

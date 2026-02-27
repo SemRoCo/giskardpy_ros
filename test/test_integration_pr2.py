@@ -19,6 +19,12 @@ from geometry_msgs.msg import (
 from giskard_msgs.action._move import Move_Goal
 from numpy import pi
 from rclpy.duration import Duration
+
+from giskardpy.motion_statechart.goals.collision_avoidance import (
+    ExternalCollisionAvoidance,
+    SelfCollisionAvoidance,
+    UpdateTemporaryCollisionRules,
+)
 from krrood.symbolic_math import symbolic_math as sm
 
 import semantic_digital_twin.spatial_types.spatial_types as cas
@@ -26,19 +32,11 @@ from conftest import kitchen_setup
 from giskardpy.data_types.exceptions import (
     MaxTrajectoryLengthException,
 )
-from giskardpy.model.collision_matrix_manager import (
-    CollisionRequest,
-    CollisionAvoidanceTypes,
-)
-from giskardpy.model.collision_world_syncer import (
-    CollisionCheckerLib,
-)
 from giskardpy.motion_statechart.data_types import (
     DefaultWeights,
     ObservationStateValues,
 )
 from giskardpy.motion_statechart.exceptions import EmptyMotionStatechartError
-from giskardpy.motion_statechart.goals.collision_avoidance import CollisionAvoidance
 from giskardpy.motion_statechart.goals.templates import Parallel, Sequence
 from giskardpy.motion_statechart.goals.tracebot import InsertCylinder
 from giskardpy.motion_statechart.graph_node import EndMotion, CancelMotion
@@ -70,11 +68,15 @@ from giskardpy_ros.exceptions import (
     ExecutionCanceledException,
     ExecutionAbortedException,
 )
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard
 from giskardpy_ros.utils.utils import load_xacro
 from giskardpy_ros.utils.utils_for_tests import (
     GiskardTester,
+)
+from semantic_digital_twin.collision_checking.collision_rules import (
+    AvoidExternalCollisions,
+    AvoidCollisionBetweenGroups,
 )
 from semantic_digital_twin.exceptions import WorldEntityNotFoundError
 from semantic_digital_twin.robots.abstract_robot import AbstractRobot, ParallelGripper
@@ -154,7 +156,6 @@ class PR2Tester(GiskardTester):
         return Giskard(
             world_config=WorldWithPR2Config(urdf=robot_desc),
             robot_interface_config=PR2StandaloneInterface(),
-            collision_checker_id=CollisionCheckerLib.bpb,
             behavior_tree_config=StandAloneBTConfig(
                 debug_mode=True, add_debug_marker_publisher=True
             ),
@@ -167,8 +168,10 @@ class PR2Tester(GiskardTester):
 
     @property
     def robot(self) -> AbstractRobot:
-        return GiskardBlackboard().executor.world.get_semantic_annotation_by_name(
-            self.api.robot_name
+        return (
+            GiskardBlackboard().executor.context.world.get_semantic_annotation_by_name(
+                self.api.robot_name
+            )
         )
 
     @property
@@ -483,7 +486,7 @@ class TestJointGoals:
         msc = MotionStatechart()
 
         min_joint_goal = JointPositionList(
-            goal_state=JointState(
+            goal_state=JointState.from_mapping(
                 mapping={
                     r_elbow_flex_joint: r_elbow_flex_joint.dof.limits.lower.position
                     - 0.2,
@@ -496,14 +499,14 @@ class TestJointGoals:
         min_joint_goal.end_condition = min_joint_goal.observation_variable
 
         torso_joint_goal = JointPositionList(
-            goal_state=JointState(mapping={torso_lift_joint: 3.2})
+            goal_state=JointState.from_mapping(mapping={torso_lift_joint: 3.2})
         )
         msc.add_node(torso_joint_goal)
         torso_joint_goal.start_condition = min_joint_goal.observation_variable
         torso_joint_goal.end_condition = torso_joint_goal.observation_variable
 
         max_joint_goal = JointPositionList(
-            goal_state=JointState(
+            goal_state=JointState.from_mapping(
                 mapping={
                     r_elbow_flex_joint: r_elbow_flex_joint.dof.limits.upper.position
                     + 0.2,
@@ -1047,9 +1050,7 @@ class TestSelfCollisionAvoidance:
                         world=giskard.api.world,
                     )
                 ),
-                CollisionAvoidance(
-                    collision_entries=[CollisionRequest.avoid_all_collision()]
-                ),
+                SelfCollisionAvoidance(),
                 local_min := LocalMinimumReached(),
             ]
         )
@@ -1118,9 +1119,7 @@ class TestSelfCollisionAvoidance:
                         z=0.2, reference_frame=giskard.l_tip
                     ),
                 ),
-                CollisionAvoidance(
-                    collision_entries=[CollisionRequest.avoid_all_collision()]
-                ),
+                SelfCollisionAvoidance(),
             ]
         )
         msc.add_node(EndMotion.when_true(cart_goal))
@@ -1160,9 +1159,7 @@ class TestSelfCollisionAvoidance:
                         x=-0.5, reference_frame=box
                     ),
                 ),
-                CollisionAvoidance(
-                    collision_entries=[CollisionRequest.avoid_all_collision()]
-                ),
+                SelfCollisionAvoidance(robot=giskard_better_pose.api.robot),
             ]
         )
         msc.add_node(EndMotion.when_true(cart_goal))
@@ -1197,10 +1194,7 @@ class TestSelfCollisionAvoidance:
         msc.add_node(cart_goal)
         cart_goal.start_condition = joint_goal.observation_variable
 
-        collision_avoidance = CollisionAvoidance(
-            collision_entries=[CollisionRequest.avoid_all_collision()],
-        )
-        msc.add_node(collision_avoidance)
+        msc.add_node(SelfCollisionAvoidance(robot=giskard.api.robot))
 
         end = EndMotion()
         msc.add_node(end)
@@ -1240,12 +1234,13 @@ class TestSelfCollisionAvoidance:
                         -0.2, reference_frame=giskard.r_tip
                     ),
                 ),
-                CollisionAvoidance(
-                    collision_entries=[
-                        CollisionRequest(
-                            type_=CollisionAvoidanceTypes.AVOID_COLLISION,
-                            body_group1=list(giskard.get_r_gripper_links()),
-                            body_group2=[
+                SelfCollisionAvoidance(robot=giskard.api.robot),
+                UpdateTemporaryCollisionRules(
+                    temporary_rules=[
+                        AvoidCollisionBetweenGroups(
+                            buffer_zone_distance=0.05,
+                            body_group_a=list(giskard.get_r_gripper_links()),
+                            body_group_b=[
                                 giskard.api.world.get_kinematic_structure_entity_by_name(
                                     "l_forearm_link"
                                 )
@@ -1294,9 +1289,7 @@ class TestSelfCollisionAvoidance:
         msc = MotionStatechart()
         msc.add_nodes(
             [
-                CollisionAvoidance(
-                    collision_entries=[CollisionRequest.avoid_all_collision()]
-                ),
+                SelfCollisionAvoidance(robot=giskard.api.robot),
                 local_min := LocalMinimumReached(),
             ]
         )
@@ -1318,7 +1311,7 @@ class TestCollisionAvoidanceGoals:
                             x=2.0, reference_frame=kitchen_setup.map
                         )
                     ),
-                    CollisionAvoidance([CollisionRequest.avoid_all_collision()]),
+                    ExternalCollisionAvoidance(),
                 ]
             )
         )
@@ -1343,10 +1336,16 @@ class TestCollisionAvoidanceGoals:
         )
         msc.add_node(cart_goal)
 
-        collision_avoidance = CollisionAvoidance(
-            collision_entries=[CollisionRequest.avoid_all_collision(0.1)],
+        msc.add_node(
+            UpdateTemporaryCollisionRules(
+                temporary_rules=[
+                    AvoidExternalCollisions(
+                        buffer_zone_distance=0.1, robot=fake_table_setup.api.robot
+                    )
+                ]
+            )
         )
-        msc.add_node(collision_avoidance)
+        msc.add_node(ExternalCollisionAvoidance(robot=fake_table_setup.api.robot))
         local_min = LocalMinimumReached()
         msc.add_node(local_min)
         end = EndMotion()
@@ -1357,7 +1356,7 @@ class TestCollisionAvoidanceGoals:
         fake_table_setup.check_cpi_geq(fake_table_setup.get_l_gripper_links(), 0.05)
         fake_table_setup.check_cpi_leq(
             [
-                GiskardBlackboard().executor.world.get_kinematic_structure_entity_by_name(
+                GiskardBlackboard().executor.context.world.get_kinematic_structure_entity_by_name(
                     "r_gripper_l_finger_tip_link"
                 )
             ],
@@ -1365,7 +1364,7 @@ class TestCollisionAvoidanceGoals:
         )
         fake_table_setup.check_cpi_leq(
             [
-                GiskardBlackboard().executor.world.get_kinematic_structure_entity_by_name(
+                GiskardBlackboard().executor.context.world.get_kinematic_structure_entity_by_name(
                     "r_gripper_r_finger_tip_link"
                 )
             ],
@@ -1420,7 +1419,7 @@ class TestCollisionAvoidanceGoals:
                     tip_normal=Vector3.Y(reference_frame=box),
                     goal_normal=Vector3.Y(reference_frame=pocky_pose_setup.map),
                 ),
-                CollisionAvoidance([CollisionRequest.avoid_all_collision()]),
+                CollisionAvoidance([CollisionRule.avoid_all_collision()]),
                 local_min := LocalMinimumReached(),
             ]
         )
@@ -1496,7 +1495,7 @@ class TestCollisionAvoidanceGoals:
         msc = MotionStatechart()
         msc.add_nodes(
             [
-                CollisionAvoidance([CollisionRequest.avoid_all_collision()]),
+                SelfCollisionAvoidance(robot=giskard.api.robot),
                 local_min := LocalMinimumReached(),
             ]
         )
@@ -2165,7 +2164,7 @@ class TestActionServerEvents:
         # worlds should be out of sync until the motion is done
         assert giskard.api.world.get_kinematic_structure_entity_by_name("box")
         with pytest.raises(WorldEntityNotFoundError):
-            GiskardBlackboard().executor.world.get_kinematic_structure_entity_by_name(
+            GiskardBlackboard().executor.context.world.get_kinematic_structure_entity_by_name(
                 "box"
             )
         await giskard.api.cancel_goal_async()
@@ -2175,10 +2174,8 @@ class TestActionServerEvents:
         await asyncio.sleep(1)
         # they should be in sync after its over
         assert giskard.api.world.get_kinematic_structure_entity_by_name("box")
-        assert (
-            GiskardBlackboard().executor.world.get_kinematic_structure_entity_by_name(
-                "box"
-            )
+        assert GiskardBlackboard().executor.context.world.get_kinematic_structure_entity_by_name(
+            "box"
         )
 
 

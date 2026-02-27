@@ -16,11 +16,10 @@ from giskardpy.data_types.exceptions import (
     GoalInitalizationException,
     ExecutionException,
 )
-from giskardpy.middleware import get_middleware
 from giskardpy.motion_statechart.graph_node import Goal
 from giskardpy.motion_statechart.tasks.pointing import Pointing
 from giskardpy.utils.decorators import clear_memo
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.blackboard_utils import raise_to_blackboard
 from semantic_digital_twin.adapters.ros import Ros2ToSemDTConverter
 from semantic_digital_twin.spatial_types.derivatives import Derivatives
@@ -91,7 +90,7 @@ class CarryMyBullshit(Goal):
     ):
         super().__init__(name=name)
         if drive_back:
-            get_middleware().loginfo("driving back")
+            rospy.node.get_logger().info("driving back")
         self.end_of_traj_reached = False
         self.enable_laser_avoidance = enable_laser_avoidance
         if CarryMyBullshit.pub is None:
@@ -155,7 +154,7 @@ class CarryMyBullshit(Goal):
             CarryMyBullshit.traj_data = [self.get_current_point()]
         if clear_path:
             CarryMyBullshit.traj_flipped = False
-            get_middleware().loginfo("cleared old path")
+            rospy.node.get_logger().info("cleared old path")
         if CarryMyBullshit.laser_sub is None:
             CarryMyBullshit.laser_sub = rospy.node.create_subscription(
                 LaserScan, self.laser_topic_name, self.laser_cb, 10
@@ -189,12 +188,12 @@ class CarryMyBullshit(Goal):
                 raise GoalInitalizationException(
                     f"didn't receive enough points after {wait_for_patrick_timeout}s"
                 )
-            get_middleware().loginfo(
+            rospy.node.get_logger().info(
                 f"waiting for one more target point for {wait_for_patrick_timeout}s"
             )
             # todo future problem
             # rospy.wait_for_message(patrick_topic_name, PointStamped, rospy.Duration(wait_for_patrick_timeout))
-            get_middleware().loginfo("received target point.")
+            rospy.node.get_logger().info("received target point.")
 
         else:
             if not CarryMyBullshit.traj_flipped:
@@ -612,7 +611,7 @@ class CarryMyBullshit(Goal):
         # current_time = rospy.get_rostime().to_sec()
         base_laser_age = current_time - self.last_scan.header.stamp.to_sec()
         if base_laser_age > self.laser_scan_age_threshold:
-            get_middleware().logwarn(
+            rospy.node.get_logger().warning(
                 f"last base laser scan is too old: {base_laser_age}"
             )
             self.closest_laser_left = self.laser_distance_threshold_width
@@ -623,7 +622,7 @@ class CarryMyBullshit(Goal):
             point_cloud_laser_age > self.laser_scan_age_threshold
             and CarryMyBullshit.point_cloud_laser_sub is not None
         ):
-            get_middleware().logwarn(
+            rospy.node.get_logger().warning(
                 f"last point cloud laser scan is too old: {point_cloud_laser_age}"
             )
             self.closest_laser_left_pc = self.laser_distance_threshold_width
@@ -652,7 +651,7 @@ class CarryMyBullshit(Goal):
                 m_line.points.append(p)
             ms.markers.append(m_line)
         except Exception as e:
-            get_middleware().logwarn("failed to create traj marker")
+            rospy.node.get_logger().warning("failed to create traj marker")
         self.pub.publish(ms)
 
     def publish_laser_thresholds(self):
@@ -772,7 +771,7 @@ class CarryMyBullshit(Goal):
             CarryMyBullshit.trajectory = np.array(CarryMyBullshit.traj_data)
             self.human_point = point
         except Exception as e:
-            get_middleware().logwarn(f"rejected new target because: {e}")
+            rospy.node.get_logger().warning(f"rejected new target because: {e}")
         self.publish_trajectory()
 
 

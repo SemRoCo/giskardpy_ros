@@ -2,7 +2,7 @@ from typing import Optional
 
 from py_trees.common import Status
 
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
 from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard
 

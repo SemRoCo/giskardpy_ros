@@ -4,7 +4,7 @@ from typing import Optional
 from giskard_msgs.action import JsonAction
 from py_trees.common import Status
 
-from giskardpy.motion_statechart.context import BuildContext
+from giskardpy.motion_statechart.context import MotionStatechartContext
 from giskardpy.utils.decorators import record_time
 from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
 from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard

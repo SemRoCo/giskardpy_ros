@@ -11,21 +11,20 @@ from angles import shortest_angular_distance
 from geometry_msgs.msg import PoseStamped, Point, PointStamped, Quaternion, Pose
 
 import semantic_digital_twin.spatial_types.spatial_types as cas
-from giskardpy.middleware import get_middleware
-from giskardpy.model.collision_matrix_manager import (
-    CollisionRequest,
-    CollisionAvoidanceTypes,
-)
-from giskardpy.model.collisions import Collisions, GiskardCollision
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.configs.giskard import Giskard
 from giskardpy_ros.python_interface.python_interface import GiskardWrapperNode
 from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard
-from giskardpy_ros.utils.utils import is_in_github_workflow
 from semantic_digital_twin.adapters.ros import (
     Ros2ToSemDTConverter,
     SemDTToRos2Converter,
 )
 from semantic_digital_twin.adapters.urdf import URDFParser
+from semantic_digital_twin.collision_checking.collision_detector import (
+    CollisionCheckingResult,
+)
+from semantic_digital_twin.collision_checking.collision_matrix import CollisionMatrix
+from semantic_digital_twin.collision_checking.collision_rules import AvoidAllCollisions
 from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
 from semantic_digital_twin.exceptions import WorldEntityNotFoundError
 from semantic_digital_twin.robots.abstract_robot import AbstractRobot
@@ -138,13 +137,15 @@ class GiskardTester(ABC):
         self.giskard.setup()
         self.robot_names = [
             v.name
-            for v in GiskardBlackboard().executor.world.get_semantic_annotations_by_type(
+            for v in GiskardBlackboard().executor.context.world.get_semantic_annotations_by_type(
                 AbstractRobot
             )
         ]
-        self.default_root = GiskardBlackboard().executor.world.root
+        self.default_root = GiskardBlackboard().executor.context.world.root
 
-        self.original_number_of_links = len(GiskardBlackboard().executor.world.bodies)
+        self.original_number_of_links = len(
+            GiskardBlackboard().executor.context.world.bodies
+        )
         self.heart = Thread(target=GiskardBlackboard().tree.live, name="bt ticker")
         self.heart.start()
         self.wait_heartbeats(1)
@@ -156,16 +157,18 @@ class GiskardTester(ABC):
     def get_odometry_joint(self) -> OmniDrive:
         return (
             GiskardBlackboard()
-            .giskard.executor.world.get_semantic_annotations_by_type(AbstractRobot)[0]
+            .giskard.executor.context.world.get_semantic_annotations_by_type(
+                AbstractRobot
+            )[0]
             .drive
         )
 
     def compute_fk_pose(self, root_link: str, tip_link: str) -> PoseStamped:
-        root_T_tip = GiskardBlackboard().executor.world.compute_forward_kinematics(
-            root=GiskardBlackboard().executor.world.get_kinematic_structure_entity_by_name(
+        root_T_tip = GiskardBlackboard().executor.context.world.compute_forward_kinematics(
+            root=GiskardBlackboard().executor.context.world.get_kinematic_structure_entity_by_name(
                 root_link
             ),
-            tip=GiskardBlackboard().executor.world.get_kinematic_structure_entity_by_name(
+            tip=GiskardBlackboard().executor.context.world.get_kinematic_structure_entity_by_name(
                 tip_link
             ),
         )
@@ -175,10 +178,10 @@ class GiskardTester(ABC):
         root_T_tip = (
             GiskardBlackboard()
             .executor.world.compute_forward_kinematics(
-                root=GiskardBlackboard().executor.world.get_kinematic_structure_entity_by_name(
+                root=GiskardBlackboard().executor.context.world.get_kinematic_structure_entity_by_name(
                     root_link
                 ),
-                tip=GiskardBlackboard().executor.world.get_kinematic_structure_entity_by_name(
+                tip=GiskardBlackboard().executor.context.world.get_kinematic_structure_entity_by_name(
                     tip_link
                 ),
             )
@@ -203,8 +206,8 @@ class GiskardTester(ABC):
         giskarding_time = self.total_time_spend_giskarding
         if not GiskardBlackboard().tree_config.is_standalone():
             giskarding_time -= self.total_time_spend_moving
-        get_middleware().loginfo(f"total time spend giskarding: {giskarding_time}")
-        get_middleware().loginfo(
+        rospy.node.get_logger().info(f"total time spend giskarding: {giskarding_time}")
+        rospy.node.get_logger().info(
             f"total time spend moving: {self.total_time_spend_moving}"
         )
 
@@ -217,8 +220,10 @@ class GiskardTester(ABC):
         for joint_name in goal_js:
             goal = goal_js[joint_name]
             current = current_js[joint_name]
-            connection: ActiveConnection1DOF = (
-                GiskardBlackboard().executor.world.get_connection_by_name(joint_name)
+            connection: (
+                ActiveConnection1DOF
+            ) = GiskardBlackboard().executor.context.world.get_connection_by_name(
+                joint_name
             )
             if not connection.dof.has_position_limits():
                 np.testing.assert_almost_equal(
@@ -272,7 +277,6 @@ class GiskardTester(ABC):
             box_shape = Box(scale=Scale(*size))
             box.collision.append(box_shape)
             box.visual.append(box_shape)
-            box.collision_config.buffer_zone_distance = 0.05
 
             connection = FixedConnection(
                 parent=parent_link,
@@ -334,7 +338,6 @@ class GiskardTester(ABC):
             cylinder_shape = Cylinder(width=radius * 2, height=height)
             cylinder.collision.append(cylinder_shape)
             cylinder.visual.append(cylinder_shape)
-            cylinder.collision_config.buffer_zone_distance = 0.05
 
             connection = FixedConnection(
                 parent=parent_link,
@@ -367,7 +370,6 @@ class GiskardTester(ABC):
             mesh_shape = FileMesh(filename=mesh, scale=Scale(*scale))
             mesh_body.collision.append(mesh_shape)
             mesh_body.visual.append(mesh_shape)
-            mesh_body.collision_config.buffer_zone_distance = 0.05
 
             connection = FixedConnection(
                 parent=parent_link,
@@ -413,28 +415,14 @@ class GiskardTester(ABC):
             self.api.world.move_branch(branch_root=body, new_parent=parent)
         self.wait_heartbeats()
 
-    def compute_collisions(
-        self, collision_entries: List[CollisionRequest]
-    ) -> Collisions:
-        GiskardBlackboard().executor.collision_scene.collision_detector.reset_cache()
-        GiskardBlackboard().executor.collision_scene.matrix_manager.parse_collision_requests(
-            collision_entries
+    def compute_all_collisions(self) -> CollisionCheckingResult:
+        collision_manager = GiskardBlackboard().executor.context.world.collision_manager
+        collision_manager.clear_temporary_rules()
+        collision_manager.add_temporary_rule(
+            AvoidAllCollisions(buffer_zone_distance=0.5)
         )
-        collision_matrix = (
-            GiskardBlackboard().executor.collision_scene.matrix_manager.compute_collision_matrix()
-        )
-        GiskardBlackboard().executor.collision_scene.set_collision_matrix(
-            collision_matrix
-        )
-        return GiskardBlackboard().executor.collision_scene.check_collisions()
-
-    def compute_all_collisions(self) -> Collisions:
-        collision_entries = [
-            CollisionRequest(
-                type_=CollisionAvoidanceTypes.AVOID_COLLISION, distance=None
-            )
-        ]
-        return self.compute_collisions(collision_entries)
+        collision_manager.update_collision_matrix()
+        return collision_manager.compute_collisions()
 
     def check_cpi_geq(
         self,
@@ -444,19 +432,12 @@ class GiskardTester(ABC):
         check_self: bool = True,
     ):
         collisions = self.compute_all_collisions()
-        assert len(collisions.all_collisions) > 0
-        for collision in collisions.all_collisions:
-            if not check_external and collision.is_external:
-                continue
-            if not check_self and not collision.is_external:
-                continue
-            if (
-                collision.original_body_a in bodies
-                or collision.original_body_b in bodies
-            ):
-                assert collision.contact_distance >= distance_threshold, (
-                    f"{collision.contact_distance} < {distance_threshold} "
-                    f"({collision.original_body_a} with {collision.original_body_b})"
+        assert len(collisions.contacts) > 0
+        for collision in collisions.contacts:
+            if collision.body_a in bodies or collision.body_b in bodies:
+                assert collision.distance >= distance_threshold, (
+                    f"{collision.distance} < {distance_threshold} "
+                    f"({collision.body_a} with {collision.body_b})"
                 )
 
     def check_cpi_leq(
@@ -467,23 +448,13 @@ class GiskardTester(ABC):
         check_self: bool = True,
     ):
         collisions = self.compute_all_collisions()
-        min_contact: GiskardCollision = None
-        for collision in collisions.all_collisions:
-            if not check_external and collision.is_external:
+        min_contact = None
+        for collision in collisions.contacts:
+            if collision.body_a not in bodies and collision.body_b not in bodies:
                 continue
-            if not check_self and not collision.is_external:
-                continue
-            if (
-                collision.original_body_a not in bodies
-                and collision.original_body_b not in bodies
-            ):
-                continue
-            if (
-                min_contact is None
-                or collision.contact_distance <= min_contact.contact_distance
-            ):
+            if min_contact is None or collision.distance <= min_contact.distance:
                 min_contact = collision
-        assert min_contact.contact_distance <= distance_threshold, (
-            f"{min_contact.contact_distance} > {distance_threshold} "
-            f"({min_contact.original_body_a} with {min_contact.original_body_b})"
+        assert min_contact.distance <= distance_threshold, (
+            f"{min_contact.distance} > {distance_threshold} "
+            f"({min_contact.body_a} with {min_contact.body_b})"
         )

@@ -2,7 +2,7 @@ from giskard_msgs.action import JsonAction
 from py_trees.composites import Sequence
 from py_trees.decorators import FailureIsSuccess
 
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.behaviors.action_server import ActionServerHandler
 from giskardpy_ros.tree.behaviors.goal_received import GoalReceived
 from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard

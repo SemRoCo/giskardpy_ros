@@ -4,7 +4,7 @@ from py_trees.common import Status
 from std_msgs.msg import Float64
 
 from giskardpy.utils.decorators import record_time
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
 from giskardpy_ros.tree.blackboard_utils import (
     catch_and_raise_to_blackboard,
@@ -31,17 +31,21 @@ class JointVelController(GiskardBehavior):
         for i in range(len(self.joint_names)):
             self.joint_names[
                 i
-            ] = GiskardBlackboard().executor.world.search_for_joint_name(
+            ] = GiskardBlackboard().executor.context.world.search_for_joint_name(
                 self.joint_names[i]
             )
-        GiskardBlackboard().executor.world.register_controlled_joints(self.joint_names)
+        GiskardBlackboard().executor.context.world.register_controlled_joints(
+            self.joint_names
+        )
 
     @catch_and_raise_to_blackboard
     @record_time
     def update(self):
         msg = Float64()
         for i, joint_name in enumerate(self.joint_names):
-            msg.data = GiskardBlackboard().executor.world.state[joint_name].velocity
+            msg.data = (
+                GiskardBlackboard().executor.context.world.state[joint_name].velocity
+            )
             self.publishers[i].publish(msg)
         return Status.RUNNING
 

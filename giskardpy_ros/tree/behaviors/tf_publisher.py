@@ -3,7 +3,7 @@ from enum import Enum
 from py_trees.common import Status
 from tf2_msgs.msg import TFMessage
 
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
 from giskardpy_ros.tree.blackboard_utils import (
     GiskardBlackboard,

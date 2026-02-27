@@ -29,7 +29,7 @@ from giskardpy.motion_statechart.motion_statechart import (
     ObservationState,
 )
 from giskardpy.motion_statechart.plotters.graphviz import MotionStatechartGraphviz
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 
 compact = False
 

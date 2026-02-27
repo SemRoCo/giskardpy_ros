@@ -3,12 +3,12 @@ import json
 from giskard_msgs.action import JsonAction
 from py_trees.common import Status
 
-from giskardpy.middleware import get_middleware
 from giskardpy.utils.decorators import record_time
 from giskardpy_ros.exceptions import (
     ExecutionCanceledException,
     ExecutionAbortedException,
 )
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
 from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard
 
@@ -39,10 +39,10 @@ class SetMoveResult(GiskardBehavior):
 
         move_result.result = json.dumps(result)
         if isinstance(e, ExecutionCanceledException):
-            get_middleware().logwarn(f"Goal canceled by user.")
+            rospy.node.get_logger().warning(f"Goal canceled by user.")
         else:
             if self.print:
-                get_middleware().loginfo(f"{self.context} succeeded.")
+                rospy.node.get_logger().info(f"{self.context} succeeded.")
 
         GiskardBlackboard().move_action_server.result_msg = move_result
         return Status.SUCCESS

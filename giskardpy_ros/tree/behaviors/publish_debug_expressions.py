@@ -6,7 +6,7 @@ from sensor_msgs.msg import JointState
 
 from giskardpy.qp.qp_controller import QPController
 from giskardpy.utils.decorators import record_time
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
 from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard
 

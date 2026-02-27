@@ -15,12 +15,11 @@ from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 from rclpy.wait_for_message import wait_for_message as rclpy_wait_for_message
 from std_msgs.msg import String
 
-from giskardpy.middleware import get_middleware
 from giskardpy_ros.exceptions import (
     ExecutionAbortedException,
     ExecutionCanceledException,
 )
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.ros2.event_loop_manager import get_event_loop
 from giskardpy_ros.utils.asynio_utils import wait_until_not_none
 
@@ -151,19 +150,6 @@ def wait_for_publisher(publisher):
     #     rospy.sleep(0.1)
 
 
-def load_urdf(file_path: str) -> str:
-    file_path = get_middleware().resolve_iri(file_path)
-    doc = xacro.process_file(file_path, mappings={"radius": "0.9"})
-    return doc.toprettyxml(indent="  ")
-
-
-class ControllerManager:
-    name: str
-
-    def __init__(self, name: str = "controller_manager"):
-        self.name = name
-
-
 class MyActionClient:
     _goal_handle: Optional[ClientGoalHandle]
     _result_future: Optional[Future]
@@ -182,7 +168,7 @@ class MyActionClient:
             node=node_handle, action_type=action_type, action_name=action_name
         )
         while not self._client.wait_for_server(timeout_sec=2):
-            rospy.get_middleware().loginfo(f"Waiting for {action_name} server...")
+            rospy.node.get_logger().info(f"Waiting for {action_name} server...")
 
     def send_goal_async(self, goal) -> Future:
         self._goal_counter += 1

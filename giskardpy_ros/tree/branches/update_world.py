@@ -1,12 +1,11 @@
 from py_trees.common import Status
 from py_trees.composites import Sequence
 
-from giskardpy_ros.tree.behaviors.collision_scene_updater import CollisionSceneUpdater
-from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
-from giskardpy_ros.tree.behaviors.world_updater import ProcessWorldUpdate
-from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard
-from giskardpy_ros.tree.branches.publish_state import PublishState
-from giskardpy_ros.tree.branches.synchronization import Synchronization
+from .publish_state import PublishState
+from .synchronization import Synchronization
+from ..behaviors.plugin import GiskardBehavior
+from ..behaviors.world_updater import ProcessWorldUpdate
+from ..blackboard_utils import GiskardBlackboard
 
 
 class HasWorldUpdate(GiskardBehavior):
@@ -33,5 +32,3 @@ class UpdateWorld(Sequence):
 
         self.add_child(self.goal_received)
         self.add_child(self.process_goal)
-        # self.add_child(NotifyModelChange())
-        self.add_child(CollisionSceneUpdater())

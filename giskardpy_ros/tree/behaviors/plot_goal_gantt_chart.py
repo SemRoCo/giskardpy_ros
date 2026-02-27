@@ -1,16 +1,9 @@
 import traceback
-from copy import copy
-from typing import List, Dict, Tuple
 
-import numpy as np
 from py_trees.common import Status
 
-from giskardpy.middleware import get_middleware
-from giskardpy.motion_statechart.goals.collision_avoidance import CollisionAvoidance
-from giskardpy.motion_statechart.graph_node import MotionStatechartNode
 from giskardpy.utils.decorators import record_time
-from giskardpy.utils.utils import create_path, cm_to_inch
-from giskardpy_ros.tree.behaviors import plot_motion_graph
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
 from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard
 
@@ -31,11 +24,11 @@ class PlotGanttChart(GiskardBehavior):
             )
             GiskardBlackboard().motion_statechart.plot_gantt_chart(
                 file_name,
-                context=GiskardBlackboard().executor.build_context,
+                context=GiskardBlackboard().executor.context,
                 second_length_in_cm=1.5,
             )
         except Exception as e:
-            get_middleware().logwarn(f"Failed to create goal gantt chart: {e}.")
+            rospy.node.get_logger().warning(f"Failed to create goal gantt chart: {e}.")
             traceback.print_exc()
 
         return Status.SUCCESS

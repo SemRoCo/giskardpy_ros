@@ -2,7 +2,7 @@ from threading import Thread
 
 from py_trees.common import Status
 
-from giskardpy.middleware import get_middleware
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
 from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard
 
@@ -21,8 +21,8 @@ class ProcessWorldUpdate(GiskardBehavior):
         else:
             if not self.worker_thread.is_alive():
                 self.worker_thread = None
-                get_middleware().loginfo(
-                    f"Finished world update, model version: {GiskardBlackboard().executor.world._model_manager.version}."
+                rospy.node.get_logger().info(
+                    f"Finished world update, model version: {GiskardBlackboard().executor.context.world._model_manager.version}."
                 )
                 return Status.SUCCESS
         return Status.RUNNING

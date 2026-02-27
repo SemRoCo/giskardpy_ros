@@ -15,10 +15,9 @@ from py_trees.decorators import FailureIsSuccess, Decorator
 from py_trees.display import unicode_symbols, ascii_symbols
 from py_trees_ros.trees import BehaviourTree
 
-from giskardpy.middleware import get_middleware
 from giskardpy.utils.decorators import toggle_on, toggle_off
 from giskardpy.utils.utils import create_path
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.behaviors.send_result import SendResult
 from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard
 from giskardpy_ros.tree.branches.clean_up_control_loop import CleanupControlLoop
@@ -88,7 +87,7 @@ class GiskardBT(BehaviourTree):
         self.cleanup_control_loop.remove_reset_world_state()
 
     def live(self):
-        get_middleware().loginfo("giskard is ready")
+        rospy.node.get_logger().info("giskard is ready")
         self.tick_tock(period_ms=50.0)
         rospy.spinner_thread.join()
         self.shutdown()
@@ -165,7 +164,7 @@ def render_dot_tree(
         filename = name + "." + extension
         pathname = os.path.join(target_directory, filename)
         create_path(pathname)
-        get_middleware().loginfo("Writing {}".format(pathname))
+        rospy.node.get_logger().info("Writing {}".format(pathname))
         writer(pathname)
         filenames[extension] = pathname
     return filenames

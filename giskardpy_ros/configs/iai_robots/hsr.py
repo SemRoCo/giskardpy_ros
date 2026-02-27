@@ -1,69 +1,21 @@
 from dataclasses import dataclass, field
-from typing import Optional
 
-import numpy as np
-from pkg_resources import resource_filename
-from semantic_digital_twin.robots.abstract_robot import AbstractRobot
-
-from giskardpy.model.world_config import WorldConfig, WorldWithOmniDriveRobot
+from giskardpy.model.world_config import WorldWithOmniDriveRobot
 from giskardpy_ros.configs.robot_interface_config import (
-    StandAloneRobotInterfaceConfig,
     RobotInterfaceConfig,
 )
-from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
+from semantic_digital_twin.robots.abstract_robot import AbstractRobot
 from semantic_digital_twin.robots.hsrb import HSRB
 from semantic_digital_twin.spatial_types.derivatives import Derivatives
 from semantic_digital_twin.world_description.connections import (
-    ActiveConnection,
     OmniDrive,
     Connection6DoF,
 )
-from semantic_digital_twin.world_description.world_entity import CollisionCheckingConfig
 
 
 @dataclass
 class WorldWithHSRConfig(WorldWithOmniDriveRobot):
     urdf_view: AbstractRobot = field(kw_only=True, default=HSRB, init=False)
-
-    def setup_collision_config(self):
-        path_to_srdf = resource_filename(
-            "giskardpy", "../../self_collision_matrices/iai/hsrb.srdf"
-        )
-        self.world.load_collision_srdf(path_to_srdf)
-        for body in self.robot.bodies_with_collisions:
-            collision_config = CollisionCheckingConfig(
-                buffer_zone_distance=0.05, violated_distance=0.0
-            )
-            body.set_static_collision_config(collision_config)
-
-        connection: ActiveConnection = self.world.get_connection_by_name(
-            "wrist_roll_joint"
-        )
-        connection.set_static_collision_config_for_direct_child_bodies(
-            CollisionCheckingConfig(
-                buffer_zone_distance=0.05,
-                violated_distance=0.0,
-                max_avoided_bodies=4,
-            )
-        )
-
-        connection: ActiveConnection = self.robot.drive
-        connection.set_static_collision_config_for_direct_child_bodies(
-            CollisionCheckingConfig(
-                buffer_zone_distance=0.1,
-                violated_distance=0.03,
-                max_avoided_bodies=2,
-            )
-        )
-
-        connection: ActiveConnection = self.world.get_connection_by_name(
-            "head_tilt_joint"
-        )
-        connection.set_static_collision_config_for_direct_child_bodies(
-            CollisionCheckingConfig(
-                buffer_zone_distance=0.03,
-            )
-        )
 
 
 class HSRStandaloneInterface(RobotInterfaceConfig):

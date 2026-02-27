@@ -13,9 +13,6 @@ class GenericWorldConfig(WorldWithFixedRobot):
     robot_name: str = field(kw_only=True, default="generic_robot")
     controller_manager_name: str = field(kw_only=True, default="controller_manager")
 
-    def setup_collision_config(self):
-        pass
-
 
 class GenericRobotInterface(RobotInterfaceConfig):
     drive_joint_name: str

@@ -3,8 +3,8 @@ from threading import Thread
 
 from py_trees.common import Status
 
-from giskardpy.middleware import get_middleware
 from giskardpy.utils.decorators import record_time
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
 from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard
 
@@ -24,7 +24,6 @@ class PlotTrajectory(GiskardBehavior):
         self.wait = wait
         self.normalize_position = normalize_position
         self.kwargs = kwargs
-        self.path_to_data_folder = GiskardBlackboard().giskard.tmp_folder
 
     def initialise(self):
         self.plot_thread = Thread(target=self.plot, name=self.name)
@@ -39,11 +38,11 @@ class PlotTrajectory(GiskardBehavior):
                 + f"trajectories/goal_{GiskardBlackboard().move_action_server.goal_id}.pdf"
             )
             GiskardBlackboard().executor.plot_trajectory(file_name)
-            get_middleware().loginfo(f"saved {file_name}")
+            rospy.node.get_logger().info(f"saved {file_name}")
         except Exception as e:
             traceback.print_exc()
-            get_middleware().logwarn(e)
-            get_middleware().logwarn("failed to save trajectory.pdf")
+            rospy.node.get_logger().warning(e)
+            rospy.node.get_logger().warning("failed to save trajectory.pdf")
 
     @record_time
     def update(self):

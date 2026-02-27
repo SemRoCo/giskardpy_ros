@@ -12,9 +12,9 @@ class NotifyStateChange(GiskardBehavior):
 
     @record_time
     def update(self):
-        if GiskardBlackboard().executor.world.world_is_being_modified:
+        if GiskardBlackboard().executor.context.world.world_is_being_modified:
             return Status.RUNNING
-        GiskardBlackboard().executor.world.notify_state_change()
+        GiskardBlackboard().executor.context.world.notify_state_change()
         return Status.SUCCESS
 
 
@@ -23,5 +23,5 @@ class NotifyModelChange(GiskardBehavior):
     @catch_and_raise_to_blackboard(skip_on_exception=False)
     @record_time
     def update(self):
-        GiskardBlackboard().executor.world._notify_model_change()
+        GiskardBlackboard().executor.context.world._notify_model_change()
         return Status.SUCCESS

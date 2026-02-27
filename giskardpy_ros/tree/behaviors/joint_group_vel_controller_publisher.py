@@ -3,9 +3,8 @@ from typing import List
 from py_trees.common import Status
 from std_msgs.msg import Float64MultiArray
 
-from giskardpy.middleware import get_middleware
 from giskardpy.utils.decorators import record_time
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
 from giskardpy_ros.tree.blackboard_utils import (
     catch_and_raise_to_blackboard,
@@ -27,7 +26,7 @@ class JointGroupVelController(GiskardBehavior):
         for connection in self.connections:
             connection.has_hardware_interface = True
         self.msg = None
-        get_middleware().loginfo(
+        rospy.node.get_logger().info(
             f"Created publisher for {self.cmd_topic} for {[c.name.name for c in self.connections]}"
         )
 

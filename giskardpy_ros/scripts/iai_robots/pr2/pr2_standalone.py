@@ -7,7 +7,7 @@ from giskardpy_ros.configs.behavior_tree_config import StandAloneBTConfig
 from giskardpy_ros.configs.giskard import Giskard
 from giskardpy_ros.configs.iai_robots.pr2 import WorldWithPR2Config
 from giskardpy_ros.configs.robot_interface_config import StandAloneRobotInterfaceConfig
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 
 
 def main():

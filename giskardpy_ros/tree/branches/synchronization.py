@@ -1,37 +1,28 @@
-from typing import List, Optional
+from typing import List
 
 from py_trees.common import Status
 from py_trees.composites import Sequence
 
-from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
 from semantic_digital_twin.world_description.connections import (
     Connection6DoF,
     OmniDrive,
 )
-
-from giskardpy_ros.tree.behaviors.collision_scene_updater import CollisionSceneUpdater
-from giskardpy_ros.tree.behaviors.notify_state_change import NotifyStateChange
-from giskardpy_ros.tree.behaviors.plugin import GiskardBehavior
-from giskardpy_ros.tree.behaviors.sync_joint_state import (
-    SyncJointState,
-    SyncJointStatePosition,
-)
-from giskardpy_ros.tree.behaviors.sync_odometry import SyncOdometry
-from giskardpy_ros.tree.behaviors.sync_tf_frames import SyncTfFrames
-from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard
+from ..behaviors.notify_state_change import NotifyStateChange
+from ..behaviors.plugin import GiskardBehavior
+from ..behaviors.sync_joint_state import SyncJointState, SyncJointStatePosition
+from ..behaviors.sync_odometry import SyncOdometry
+from ..behaviors.sync_tf_frames import SyncTfFrames
+from ..blackboard_utils import GiskardBlackboard
 
 
 class Synchronization(Sequence):
     sync_tf_frames: SyncTfFrames
-    collision_scene_updater: CollisionSceneUpdater
     added_behaviors: List[GiskardBehavior]
 
     def __init__(self):
         super().__init__("synchronize", memory=True)
         self.sync_tf_frames = None
-        self.collision_scene_updater = CollisionSceneUpdater()
         self.add_child(NotifyStateChange())
-        self.add_child(self.collision_scene_updater)
         self.added_behaviors = []
 
     def _number_of_synchronisation_behaviors(self) -> int:

@@ -8,7 +8,7 @@ from giskardpy_ros.configs.other_robots.generic import GenericWorldConfig
 from giskardpy_ros.configs.robot_interface_config import (
     RobotInterfaceConfig,
 )
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.ros2.ros2_interface import get_robot_description
 from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard
 

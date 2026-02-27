@@ -20,7 +20,6 @@ from giskardpy.utils.math import (
 from giskardpy_ros.configs.behavior_tree_config import StandAloneBTConfig
 from giskardpy_ros.configs.giskard import Giskard
 from giskardpy_ros.configs.iai_robots.tiago import TiagoStandaloneInterface
-from giskardpy_ros.ros2.ros2_interface import load_urdf
 from giskardpy_ros.utils.utils_for_tests import GiskardTester
 from semantic_digital_twin.datastructures.prefixed_name import PrefixedName
 

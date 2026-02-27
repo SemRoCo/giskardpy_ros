@@ -6,8 +6,6 @@ from rclpy import Parameter
 from visualization_msgs.msg import InteractiveMarker, InteractiveMarkerControl, Marker
 from visualization_msgs.msg import InteractiveMarkerFeedback
 
-import semantic_digital_twin.spatial_types.spatial_types as cas
-from giskardpy.motion_statechart.goals.templates import Parallel
 from giskardpy.motion_statechart.graph_node import EndMotion
 from giskardpy.motion_statechart.monitors.payload_monitors import CountSeconds
 from giskardpy.motion_statechart.motion_statechart import MotionStatechart
@@ -15,7 +13,7 @@ from giskardpy.motion_statechart.tasks.cartesian_tasks import CartesianPose
 from giskardpy_ros.python_interface.python_interface import (
     GiskardWrapper,
 )
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from semantic_digital_twin.exceptions import WorldEntityNotFoundError
 from semantic_digital_twin.spatial_types import HomogeneousTransformationMatrix
 

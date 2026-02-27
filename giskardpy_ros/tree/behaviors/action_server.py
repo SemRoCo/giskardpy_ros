@@ -8,15 +8,15 @@ from rclpy.action.server import ServerGoalHandle
 from rclpy.timer import Timer
 
 from giskardpy.data_types.exceptions import GiskardException
-from giskardpy.middleware import get_middleware
 from giskardpy.utils.decorators import record_time
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 
 
 class ActionServerHandler:
     """
     Interface to action server which is more useful for behaviors.
     """
+
     goal_id: int
     name: str
     client_alive_checker: Timer
@@ -34,25 +34,29 @@ class ActionServerHandler:
         self.goal_queue = Queue(1)
         self.result_queue = Queue(1)
         self.goal_handle = None
-        self._as = ActionServer(node=rospy.node,
-                                action_type=action_type,
-                                action_name=self.name,
-                                execute_callback=self.execute_cb,
-                                goal_callback=self.default_goal_callback,
-                                cancel_callback=self.cancel_callback)
+        self._as = ActionServer(
+            node=rospy.node,
+            action_type=action_type,
+            action_name=self.name,
+            execute_callback=self.execute_cb,
+            goal_callback=self.default_goal_callback,
+            cancel_callback=self.cancel_callback,
+        )
 
     def loginfo(self, msg):
-        get_middleware().loginfo(f'{self.name}(Goal #{self.goal_id}): {msg}')
+        rospy.node.get_logger().info(f"{self.name}(Goal #{self.goal_id}): {msg}")
 
     def default_goal_callback(self, goal_request):
         if self.goal_handle is not None:
-            self.loginfo(f'New Goal requested while Goal #{self.goal_id} is being processed. '
-                         f'Cancelling old Goal.')
+            self.loginfo(
+                f"New Goal requested while Goal #{self.goal_id} is being processed. "
+                f"Cancelling old Goal."
+            )
             self.cancel_requested = True
         return GoalResponse.ACCEPT
 
     def cancel_callback(self, goal_handle: ServerGoalHandle):
-        self.loginfo(f'Cancel request received.')
+        self.loginfo(f"Cancel request received.")
         return CancelResponse.ACCEPT
 
     def is_goal_msg_type_execute(self):
@@ -69,7 +73,7 @@ class ActionServerHandler:
             sleep(0.1)
         self.goal_queue.put(goal)
         result_msg = self.result_queue.get()
-        self.loginfo(f'Sending response.')
+        self.loginfo(f"Sending response.")
         # self.client_alive_checker.shutdown()
         self.goal_msg = None
         self.goal_handle = None
@@ -82,10 +86,10 @@ class ActionServerHandler:
         return True
 
     def ping_client(self, time):
-        client_name = self._as.current_goal.goal.goal_id.id.split('-')[0]
+        client_name = self._as.current_goal.goal.goal_id.id.split("-")[0]
         self.client_alive = rospy.node.rosnode_ping(client_name, max_count=1)
         if not self.client_alive:
-            get_middleware().logerr(f'Lost connection to Client "{client_name}".')
+            rospy.node.get_logger().error(f'Lost connection to Client "{client_name}".')
             self.client_alive_checker.shutdown()
 
     def accept_goal(self) -> None:
@@ -95,14 +99,14 @@ class ActionServerHandler:
             # self.client_alive = True
             # self.client_alive_checker = rospy.node.create_timer(1.0, callback=self.ping_client)
             self.goal_id += 1
-            self.loginfo(f'Accepted')
+            self.loginfo(f"Accepted")
         except Empty:
             return None
 
     @property
     def result_msg(self):
         if self._result_msg is None:
-            raise GiskardException('no result message set.')
+            raise GiskardException("no result message set.")
         return self._result_msg
 
     @result_msg.setter

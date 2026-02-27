@@ -24,5 +24,5 @@ class PlotMotionGraph(GiskardBehavior):
         # create_path(file_name)
         # graph.write_pdf(file_name)
         # graph.write_dot(file_name + '.dot')
-        # get_middleware().loginfo(f"Saved task graph at {file_name}.")
+        # rospy.node.get_logger().info(f"Saved task graph at {file_name}.")
         return Status.SUCCESS

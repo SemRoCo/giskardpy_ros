@@ -12,17 +12,16 @@ from giskard_msgs.action._json_action import JsonAction_Result
 from giskard_msgs.msg import ExecutionState
 from rclpy import Context, Parameter, Future
 from rclpy.action.client import ClientGoalHandle
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 
-from giskardpy.middleware import get_middleware
 from giskardpy.motion_statechart.motion_statechart import (
     MotionStatechart,
     LifeCycleState,
     ObservationState,
 )
 from giskardpy_ros.exceptions import ExecutionException
-from giskardpy_ros.ros2 import rospy
-from giskardpy_ros.ros2.my_multithreaded_executor import MyMultiThreadedExecutor
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.ros2.ros2_interface import MyActionClient
 from semantic_digital_twin.adapters.ros.world_fetcher import fetch_world_from_service
 from semantic_digital_twin.adapters.ros.world_synchronizer import (
@@ -53,18 +52,26 @@ class GiskardWrapper:
     _motion_statechart: MotionStatechart = field(init=False)
 
     def __post_init__(self):
-        get_middleware().loginfo("syncing world")
+        self.node_handle.get_logger().info("syncing world")
         self.world = fetch_world_from_service(self.node_handle, timeout_seconds=300)
-        get_middleware().loginfo("world synced")
-        self.model_synchronizer = ModelSynchronizer(world=self.world, node=self.node_handle)
-        self.state_synchronizer = StateSynchronizer(world=self.world, node=self.node_handle)
+        self.node_handle.get_logger().info("world synced")
+        self.model_synchronizer = ModelSynchronizer(
+            _world=self.world, node=self.node_handle, synchronous=True
+        )
+        self.state_synchronizer = StateSynchronizer(
+            _world=self.world, node=self.node_handle
+        )
         giskard_topic = f"{self.giskard_node_name}/command"
         self._client = MyActionClient(self.node_handle, JsonAction, giskard_topic)
         sleep(0.3)
 
     @property
     def robot_name(self) -> PrefixedName:
-        return self.world.get_semantic_annotations_by_type(AbstractRobot)[0].name
+        return self.robot.name
+
+    @property
+    def robot(self) -> AbstractRobot:
+        return self.world.get_semantic_annotations_by_type(AbstractRobot)[0]
 
     def execute_async(self, motion_statechart: MotionStatechart) -> Future:
         self._motion_statechart = motion_statechart
@@ -177,9 +184,7 @@ class GiskardWrapperNode(GiskardWrapper):
         super().__post_init__()
 
     def __spin(self):
-        self.my_executor = MyMultiThreadedExecutor(
-            thread_name_prefix="python interface"
-        )
+        self.my_executor = MultiThreadedExecutor()
         self.my_executor.add_node(self.node_handle)
         self.is_spinning = True
         while rclpy.ok():

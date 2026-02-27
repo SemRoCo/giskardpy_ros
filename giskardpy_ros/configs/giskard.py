@@ -11,11 +11,8 @@ from sqlalchemy.orm import sessionmaker
 
 from giskardpy.data_types.exceptions import SetupException
 from giskardpy.executor import Executor, SimulationPacer
-from giskardpy.middleware import get_middleware
-from giskardpy.model.collision_world_syncer import (
-    CollisionCheckerLib,
-)
 from giskardpy.model.world_config import WorldConfig
+from giskardpy.motion_statechart.context import MotionStatechartContext
 from giskardpy.qp.qp_controller_config import QPControllerConfig
 from giskardpy.ros_executor import Ros2Executor
 from giskardpy_ros.configs.behavior_tree_config import (
@@ -23,7 +20,7 @@ from giskardpy_ros.configs.behavior_tree_config import (
     StandAloneBTConfig,
 )
 from giskardpy_ros.configs.robot_interface_config import RobotInterfaceConfig
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.tree.blackboard_utils import GiskardBlackboard
 from krrood.ormatic.utils import create_engine
 from semantic_digital_twin.adapters.ros.tf_publisher import TFPublisher
@@ -63,7 +60,6 @@ class Giskard:
     world_config: WorldConfig
     behavior_tree_config: BehaviorTreeConfig
     robot_interface_config: RobotInterfaceConfig
-    collision_checker_id: CollisionCheckerLib = CollisionCheckerLib.bpb
     qp_controller_config: QPControllerConfig = field(default_factory=QPControllerConfig)
     executor: Executor = field(init=False)
     model_synchronizer: ModelSynchronizer = field(init=False)
@@ -72,11 +68,6 @@ class Giskard:
     viz_marker_publisher: VizMarkerPublisher = field(init=False)
     model_reload_synchronizer: ModelReloadSynchronizer = field(init=False)
     world_fetcher: FetchWorldServer = field(init=False)
-    tmp_folder: str = field(
-        default_factory=lambda: get_middleware().resolve_iri(
-            "package://giskardpy_ros/tmp/"
-        )
-    )
 
     def __post_init__(self):
         GiskardBlackboard().giskard = self
@@ -94,21 +85,16 @@ class Giskard:
                 real_time_factor = 1.0
             self.executor = Ros2Executor(
                 ros_node=rospy.node,
-                world=self.world_config.world,
-                controller_config=self.qp_controller_config,
-                collision_checker=self.collision_checker_id,
-                tmp_folder=self.tmp_folder,
+                context=MotionStatechartContext(
+                    world=self.world_config.world,
+                    qp_controller_config=self.qp_controller_config,
+                ),
                 pacer=SimulationPacer(real_time_factor=real_time_factor),
             )
 
             self.behavior_tree_config.setup()
 
             self.robot_interface_config.setup()
-        with self.world_config.world.modify_world():
-            self.world_config.setup_collision_config()
-
-        if self.executor.collision_scene.is_collision_checking_enabled():
-            self.executor.collision_scene.sync()
 
         self.sanity_check()
         self.setup_world_model_ros_interface()
@@ -128,7 +114,7 @@ class Giskard:
 
             self.model_reload_synchronizer = ModelReloadSynchronizer(
                 node=rospy.node,
-                world=self.world_config.world,
+                _world=self.world_config.world,
                 session=session,
             )
         except AssertionError as e:
@@ -138,11 +124,11 @@ class Giskard:
             self.model_reload_synchronizer = None
 
         self.model_synchronizer = ModelSynchronizer(
-            world=self.world_config.world, node=rospy.node
+            _world=self.world_config.world, node=rospy.node
         )
         self.model_synchronizer.pause()
         self.state_synchronizer = StateSynchronizer(
-            world=self.world_config.world, node=rospy.node
+            _world=self.world_config.world, node=rospy.node
         )
         self.state_synchronizer.pause()
         self.world_fetcher = FetchWorldServer(
@@ -153,7 +139,7 @@ class Giskard:
         )
         self.tf_publisher.pause()
         self.viz_marker_publisher = VizMarkerPublisher(
-            node=rospy.node, world=self.world_config.world
+            node=rospy.node, _world=self.world_config.world
         )
 
     def sanity_check(self):
@@ -175,7 +161,7 @@ class Giskard:
         if len(controlled_joints) == 0 and len(world.connections) > 0:
             raise SetupException("No joints are flagged as controlled.")
         if len(non_controlled_joints) > 0:
-            get_middleware().loginfo(
+            rospy.node.get_logger().info(
                 f"The following joints are non-fixed according to the urdf, "
                 f"but not flagged as controlled: {[c.name for c in non_controlled_joints]}."
             )

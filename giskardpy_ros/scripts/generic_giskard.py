@@ -9,7 +9,7 @@ from giskardpy_ros.configs.other_robots.generic import (
     GenericWorldConfig,
     GenericRobotInterface,
 )
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from giskardpy_ros.ros2.ros2_interface import get_robot_description
 
 
