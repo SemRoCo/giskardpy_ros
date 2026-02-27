@@ -1,13 +1,14 @@
-from dataclasses import field
+from dataclasses import field, dataclass
 
 from giskardpy.model.world_config import WorldWithOmniDriveRobot
 from pkg_resources import resource_filename
 from semantic_digital_twin.robots.abstract_robot import AbstractRobot
-from semantic_digital_twin.robots.tiago import Tiago
+from semantic_digital_twin.robots.tiago import TiagoMujoco
 
 from semantic_digital_twin.world_description.connections import Connection6DoF, OmniDrive
 
 from giskardpy_ros.configs.robot_interface_config import StandAloneRobotInterfaceConfig, RobotInterfaceConfig
+
 
 class TiagoVelocityInterface(RobotInterfaceConfig):
 
@@ -17,17 +18,16 @@ class TiagoVelocityInterface(RobotInterfaceConfig):
             tf_parent_frame="map",
             tf_child_frame="odom",
         )
-        
+
         omni_drive = self.world.get_connections_by_type(OmniDrive)[0]
         self.sync_odometry_topic(
             "/odom",
             omni_drive,
         )
-        
+
         self.add_base_cmd_velocity(
             cmd_vel_topic="/cmd_vel", joint=omni_drive
         )
-
 
         self.sync_joint_state_topic("/joint_states")
         joints = [
@@ -57,8 +57,10 @@ class TiagoVelocityInterface(RobotInterfaceConfig):
             cmd_topic="/realtime_body_controller_real/command", connections=joints
         )
 
+
+@dataclass
 class WorldWithTiagoConfig(WorldWithOmniDriveRobot):
-    urdf_view: AbstractRobot = field(kw_only=True, default=Tiago, init=False)
+    urdf_view: AbstractRobot = field(kw_only=True, default=TiagoMujoco, init=False)
 
     def setup_collision_config(self):
         pass

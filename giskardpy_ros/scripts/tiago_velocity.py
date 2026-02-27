@@ -1,5 +1,5 @@
 from giskardpy_ros.configs.iai_robots.tiago import TiagoVelocityInterface, WorldWithTiagoConfig
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from rclpy import Parameter
 from rclpy.exceptions import ParameterUninitializedException
 
