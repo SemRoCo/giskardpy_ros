@@ -3,7 +3,7 @@ from dataclasses import field, dataclass
 from giskardpy.model.world_config import WorldWithOmniDriveRobot
 from pkg_resources import resource_filename
 from semantic_digital_twin.robots.abstract_robot import AbstractRobot
-from semantic_digital_twin.robots.armar import Armar
+from semantic_digital_twin.robots.armar7 import Armar7
 
 from giskardpy_ros.configs.robot_interface_config import RobotInterfaceConfig
 
@@ -38,7 +38,7 @@ class Armar7VelocityInterface(RobotInterfaceConfig):
 
 @dataclass
 class WorldWithArmar7Config(WorldWithOmniDriveRobot):
-    urdf_view: AbstractRobot = field(kw_only=True, default=Armar, init=False)
+    urdf_view: AbstractRobot = field(kw_only=True, default=Armar7, init=False)
 
     def setup_collision_config(self):
         pass

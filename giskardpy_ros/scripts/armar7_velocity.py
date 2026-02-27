@@ -1,8 +1,6 @@
-from giskardpy.model.collision_world_syncer import CollisionCheckerLib
-
 from giskardpy_ros.configs.iai_robots.tiago import TiagoVelocityInterface, WorldWithTiagoConfig
 from giskardpy_ros.configs.other_robots.armar7 import WorldWithArmar7Config, Armar7VelocityInterface
-from giskardpy_ros.ros2 import rospy
+from giskardpy.middleware.ros2 import rospy
 from rclpy import Parameter
 from rclpy.exceptions import ParameterUninitializedException
 
@@ -24,7 +22,6 @@ def main():
 
     giskard = Giskard(
         world_config=WorldWithArmar7Config(urdf=robot_description),
-        collision_checker_id=CollisionCheckerLib.none,
         robot_interface_config=Armar7VelocityInterface(),
         behavior_tree_config=ClosedLoopBTConfig(
             visualization_mode=VisualizationMode.VisualsFrameLocked
