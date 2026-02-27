@@ -39,9 +39,9 @@ setup(
             "motion_statechart_inspector = giskardpy_ros.scripts.tools.motion_statechart_inspector:main",
             "tracy_standalone = giskardpy_ros.scripts.tracy_standalone:main",
             "tracy_velocity = giskardpy_ros.scripts.tracy_velocity:main",
-            "tiago_velocity = scripts.tiago_velocity:main",
-            "armar_velocity = scripts.armar7_velocity:main",
-            "ur5_velocity = scripts.ur5_velocity:main",
+            "tiago_velocity = giskardpy_ros.scripts.tiago_velocity:main",
+            "armar_velocity = giskardpy_ros.scripts.armar7_velocity:main",
+            "ur5_velocity = giskardpy_ros.scripts.ur5_velocity:main",
         ],
     },
 )
