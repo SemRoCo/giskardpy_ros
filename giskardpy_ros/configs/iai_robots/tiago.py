@@ -19,14 +19,15 @@ class TiagoVelocityInterface(RobotInterfaceConfig):
         )
         
         omni_drive = self.world.get_connections_by_type(OmniDrive)[0]
-        # self.sync_odometry_topic(
-        #     "/laser_odom",
-        #     omni_drive,
-        # )
-        #
-        self.add_base_cmd_velocity(
-            cmd_vel_topic="/omni_base_controller/cmd_vel", joint=omni_drive
+        self.sync_odometry_topic(
+            "/odom",
+            omni_drive,
         )
+        
+        self.add_base_cmd_velocity(
+            cmd_vel_topic="/cmd_vel", joint=omni_drive
+        )
+
 
         self.sync_joint_state_topic("/joint_states")
         joints = [
