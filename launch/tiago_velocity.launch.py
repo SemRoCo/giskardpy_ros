@@ -36,7 +36,7 @@ def generate_launch_description():
             package='giskardpy_ros',
             executable='interactive_marker',
             name='giskard_interactive_marker',
-            parameters=[{'root_link': 'base_link',
+            parameters=[{'root_link': 'map',
                          'tip_link': 'arm_right_7_link'}],
             output='screen',
         ),

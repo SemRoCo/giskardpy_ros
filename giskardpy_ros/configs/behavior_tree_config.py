@@ -48,7 +48,7 @@ class BehaviorTreeConfig:
         """
         GiskardBlackboard().tree_config = self
         self.tree = GiskardBT()
-        self.add_tf_publisher()
+        # self.add_tf_publisher()
         if self.debug_mode:
             if self.add_trajectory_plotter:
                 self._add_trajectory_plotter(wait=True)
