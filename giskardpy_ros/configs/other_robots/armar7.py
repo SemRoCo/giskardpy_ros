@@ -4,12 +4,28 @@ from giskardpy.model.world_config import WorldWithOmniDriveRobot
 from pkg_resources import resource_filename
 from semantic_digital_twin.robots.abstract_robot import AbstractRobot
 from semantic_digital_twin.robots.armar7 import Armar7
-
+from semantic_digital_twin.world_description.connections import Connection6DoF, OmniDrive
 from giskardpy_ros.configs.robot_interface_config import RobotInterfaceConfig
 
 class Armar7VelocityInterface(RobotInterfaceConfig):
 
     def setup(self):
+        self.sync_6dof_joint_with_tf_frame(
+            joint=self.world.get_connections_by_type(Connection6DoF)[0],
+            tf_parent_frame="map",
+            tf_child_frame="odom",
+        )
+
+        omni_drive = self.world.get_connections_by_type(OmniDrive)[0]
+        self.sync_odometry_topic(
+            "/odom",
+            omni_drive,
+        )
+
+        self.add_base_cmd_velocity(
+            cmd_vel_topic="/cmd_vel", joint=omni_drive
+        )
+
         self.sync_joint_state_topic("/joint_states")
         joints = [
             "ArmR1_Cla1",
