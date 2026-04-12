@@ -27,6 +27,24 @@ source ~/giskard_ws/install/setup.bash
 ### Tutorials
 https://github.com/SemRoCo/giskardpy/wiki
 
+### Tools
+
+#### Grasp Scoring (`scripts/tools/grasp_scoring_tool.py`)
+A standalone grasp quality ranking tool that scores candidate grasp poses for a given object mesh.
+
+It uses [trimesh](https://trimesh.org/) for mesh operations and [CGAL](https://www.cgal.org/) for AABB-tree based collision detection.
+Each grasp is evaluated on three criteria:
+- **Collision** — penalizes grasps where the gripper intersects the object
+- **Clearance** — penalizes grasps where the gripper dips below the ground plane
+- **Stability** — rewards grasps with two opposing contact normals and a good contact spread
+
+Results are written live to `grasp_ranking_live.txt` as each grasp is evaluated.
+
+Configure `OBJECT_UUID`, `GRIPPER_NAME`, and `BASE_PATH` at the bottom of the file before running:
+```bash
+python scripts/tools/grasp_scoring_tool.py
+```
+
 ### How to cite
 ```
 @phdthesis{stelter25giskard,
