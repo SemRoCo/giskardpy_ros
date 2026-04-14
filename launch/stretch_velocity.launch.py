@@ -30,16 +30,16 @@ def generate_launch_description():
                 # parameters=[{'robot_description': robot_description}],
                 output="screen",
             ),
-            Node(
-                package="giskardpy_ros",
-                executable="interactive_marker",
-                name="giskard_interactive_marker",
-                parameters=[
-                    {"root_link": "link_straight_gripper", "tip_link": "link_gripper_fingertip_left"},
-                    # {"root_link": "map", "tip_link": "base_link"},
-                ],
-                output="screen",
-            ),
+            # Node(
+            #     package="giskardpy_ros",
+            #     executable="interactive_marker",
+            #     name="giskard_interactive_marker",
+            #     parameters=[
+            #         # {"root_link": "link_straight_gripper", "tip_link": "link_gripper_fingertip_left"},
+            #         {"root_link": "map", "tip_link": "link_lift"},
+            #     ],
+            #     output="screen",
+            # ),
             # RViz node
         ]
     )

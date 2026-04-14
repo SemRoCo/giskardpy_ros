@@ -25,10 +25,10 @@ def main():
         world_config=WorldWithStretchConfigDiffDrive(urdf=robot_description),
         robot_interface_config=StretchVelocityInterface(),
         behavior_tree_config=ClosedLoopBTConfig(
-            visualization_mode=VisualizationMode.VisualsFrameLocked
+            visualization_mode=VisualizationMode.Nothing
         ),
         qp_controller_config=QPControllerConfig(
-            target_frequency=25, prediction_horizon=15
+            target_frequency=25, prediction_horizon=30
         ),
     )
     giskard.live()
