@@ -59,7 +59,17 @@ def generate_launch_description():
                 package="giskardpy_ros",
                 executable="interactive_marker",
                 name="giskard_interactive_marker",
-                parameters=[{"root_link": "map", "tip_link": "r_gripper_tool_frame"}],
+                parameters=[
+                    {
+                        "root_links": ["map", "map", "map", "map"],
+                        "tip_links": [
+                            "r_gripper_tool_frame",
+                            "l_gripper_tool_frame",
+                            "base_footprint",
+                            "high_def_frame",
+                        ],
+                    }
+                ],
                 output="screen",
             ),
         ]

@@ -49,8 +49,14 @@ def generate_launch_description():
                 executable="interactive_marker",
                 name="giskard_interactive_marker",
                 parameters=[
-                    {"root_link": "map", "tip_link": "hand_palm_link"},
-                    # {"root_link": "map", "tip_link": "base_link"},
+                    {
+                        "root_links": ["map", "map", "map"],
+                        "tip_links": [
+                            "hand_palm_link",
+                            "base_footprint",
+                            "head_rgbd_sensor_link",
+                        ],
+                    },
                 ],
                 output="screen",
             ),
