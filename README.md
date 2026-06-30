@@ -1,3 +1,8 @@
+# This repo is outdated!!!
+It has been moved to [https://github.com/cram2/cram_ros2_packages](https://github.com/cram2/cram_ros2_packages) and is only a thin ros wrapper for [https://github.com/cram2/cognitive_robot_abstract_machine/tree/main/giskardpy](https://github.com/cram2/cognitive_robot_abstract_machine/tree/main/giskardpy)
+
+Old README below:
+
 # Giskardpy_ros
 A motion control framework for ROS2 implemented using [Giskardpy](https://github.com/SemRoCo/giskardpy/tree/giskard_library).
 
