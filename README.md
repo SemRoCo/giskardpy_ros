@@ -1,3 +1,8 @@
+# This repo is outdated!!!
+It has been moved to [https://github.com/cram2/cram_ros2_packages](https://github.com/cram2/cram_ros2_packages) and is only a thin ros wrapper for [https://github.com/cram2/cognitive_robot_abstract_machine/tree/main/giskardpy](https://github.com/cram2/cognitive_robot_abstract_machine/tree/main/giskardpy)
+
+Old README below:
+
 # Giskard(py)
 Giskard is an open source motion planning framework for ROS, which uses constraint and optimization based task space control to generate trajectories for the whole body of mobile manipulators.
 
